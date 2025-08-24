@@ -1,0 +1,139 @@
+package com.mtt.presentation.ui.screens.jaap
+
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.mtt.jaapmala.data.local.entity.JaapEntity
+import com.mtt.jaapmala.domain.usecase.GetMantraUseCase
+import com.mtt.jaapmala.domain.usecase.UpdateJaapManuallyUseCase
+import com.mtt.jaapmala.domain.usecase.UpdateJaapUseCase
+import com.mtt.jaapmala.util.UIEvent
+import com.mtt.presentation.ui.screens.app_bar.TopBarAction
+import com.mtt.presentation.ui.screens.app_bar.TopBarState
+import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
+import javax.inject.Inject
+
+@HiltViewModel
+class JaapDetailViewModel @Inject constructor(
+    private val getMantraUseCase: GetMantraUseCase,
+    private val updateJaapUseCase: UpdateJaapUseCase,
+    private val updateJaapManuallyUseCase: UpdateJaapManuallyUseCase
+) : ViewModel() {
+
+    private val _mantra = MutableStateFlow<JaapEntity?>(null)
+    val mantra: StateFlow<JaapEntity?> = _mantra
+
+    private val _uiEvent = MutableSharedFlow<UIEvent>()
+    val uiEvent = _uiEvent.asSharedFlow()
+
+    private val _updateStatus = MutableStateFlow<Boolean?>(null)
+    val updateStatus = _updateStatus.asStateFlow()
+
+    private val _showManualEntryDialog = MutableStateFlow(false)
+    val showManualEntryDialog: StateFlow<Boolean> = _showManualEntryDialog
+
+    private val _topBarState = MutableStateFlow<TopBarState>(
+        TopBarState.DetailTopBar("")
+    )
+    val topBarState: StateFlow<TopBarState> = _topBarState
+
+
+    fun getMantra(id: Int) {
+        viewModelScope.launch {
+            getMantraUseCase(id).collect { entity ->
+                // Directly set the mantra, initializing counts on load if necessary
+                _mantra.value = entity.copy(
+                    count = entity.count.takeIf { it >= 0 } ?: 0, // Ensure count is never negative
+                    sessionCount = entity.sessionCount.takeIf { it >= 0 } ?: 0,
+                    sessionMalaCount = entity.sessionMalaCount.takeIf { it >= 0 } ?: 0
+                )
+                _topBarState.value = TopBarState.DetailTopBar(_mantra.value?.name!!)
+
+            }
+        }
+    }
+
+    fun increaseCount() {
+        _mantra.value?.let { current ->
+            var newCount = current.count + 1
+            var newMalaCount = current.todayMalaCount
+            var newLifetimeMalaCount = current.lifetimeMalaCount
+            var newSessionMalaCount = current.sessionMalaCount
+
+            if (newCount % current.malaSize == 0) {
+                newCount = 0
+                newMalaCount += 1
+                newLifetimeMalaCount += 1
+                newSessionMalaCount += 1
+
+                viewModelScope.launch {
+                    _uiEvent.emit(UIEvent.TriggerFeedback)
+                }
+            }
+
+            val updated = current.copy(
+                count = newCount,
+                todayCount = current.todayCount + 1,
+                lifetimeCount = current.lifetimeCount + 1,
+                sessionCount = current.sessionCount + 1,
+                todayMalaCount = newMalaCount,
+                lifetimeMalaCount = newLifetimeMalaCount,
+                sessionMalaCount = newSessionMalaCount,
+
+            )
+
+            _mantra.value = updated
+
+            // Save to DB immediately
+            viewModelScope.launch {
+                updateJaapUseCase(updated)
+            }
+        }
+    }
+
+
+    fun decreaseCount() {
+        _mantra.value?.let { current ->
+            if (current.count > 0) {
+                val updated = current.copy(
+                    count = current.count - 1,
+                    todayCount = maxOf(current.todayCount - 1, 0),
+                    lifetimeCount = maxOf(current.lifetimeCount - 1, 0),
+                    sessionCount = maxOf(current.sessionCount - 1, 0)
+                )
+
+                _mantra.value = updated
+
+                // Save to DB immediately
+                viewModelScope.launch {
+                    updateJaapUseCase(updated)
+                }
+            }
+        }
+    }
+    fun updateJaapCountManually(jaapId: Int, addedCount: Int) {
+        viewModelScope.launch {
+            try {
+                updateJaapManuallyUseCase.invoke(jaapId, addedCount)
+                _updateStatus.value = true
+            } catch (e: Exception) {
+                _updateStatus.value = false
+            }
+        }
+    }
+    fun onTopBarAction(action: TopBarAction) {
+        when (action) {
+            is TopBarAction.IncrementCount -> { _showManualEntryDialog.value = true }
+            else -> {}
+        }
+    }
+    fun dismissManualEntryDialog() {
+        _showManualEntryDialog.value = false
+    }
+
+}
