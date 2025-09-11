@@ -21,10 +21,6 @@ class DatabaseProvider @Inject constructor(
         return db!!
     }
 
-    fun recreateDatabase() {
-        db = createDatabase()
-    }
-
     private fun createDatabase(): JaapDatabase {
         return Room.databaseBuilder(
             context, JaapDatabase::class.java, Constants.DB_NAME

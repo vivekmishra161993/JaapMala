@@ -22,7 +22,7 @@ object BackupPrefs {
     }
     fun setOnboardingShown(context: Context) {
         context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
-            .edit().putBoolean(KEY_ONBOARDING_SHOWN, true).apply()
+            .edit { putBoolean(KEY_ONBOARDING_SHOWN, true) }
     }
 
     fun isOnboardingShown(context: Context): Boolean {

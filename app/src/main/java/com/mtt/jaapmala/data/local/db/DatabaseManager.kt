@@ -1,5 +1,4 @@
 package com.mtt.jaapmala.data.local.db
-// import android.widget.Toast // No longer directly used for showing
 import android.content.Context
 import android.net.Uri
 import androidx.activity.compose.ManagedActivityResultLauncher
@@ -16,13 +15,10 @@ import javax.inject.Singleton
     @ApplicationContext private val context: Context, // Still needed for some operations
     private val databaseProvider: DatabaseProvider,
     private val fileHelper: FileHelper, // Injected
-    private val backupPreferences: BackupPreferences, // Injected
     private val notifier: Notifier, // Injected
     private val appRestarter: AppRestarter // Injected
 ) {
-
-    // Keep these as they were, or make them nullable if setup is not guaranteed at construction
-    private var backupLauncher: ManagedActivityResultLauncher<String, Uri?>? = null
+     private var backupLauncher: ManagedActivityResultLauncher<String, Uri?>? = null
     private var restoreLauncher: ManagedActivityResultLauncher<Array<String>, Uri?>? = null
     // Call this from your Activity/Fragment where you register the launchers
     fun setupActivityLaunchers(
@@ -55,7 +51,6 @@ import javax.inject.Singleton
             }
 
             try {
-                // ✅ Always use "rwt" (truncate + write) like your old working code
                 fileHelper.openOutputStream(context, it, "rwt")?.use { output ->
                     dbFile.inputStream().use { input ->
                         input.copyTo(output)
@@ -70,9 +65,7 @@ import javax.inject.Singleton
         }
     }
 
-
-
-    // Now returns a Boolean indicating success/failure (or could return a sealed class for more detailed results)
+    // Now returns a Boolean indicating success/failure
     fun handleRestore(uri: Uri?): Boolean {
         if (uri == null) {
             return false
