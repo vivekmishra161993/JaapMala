@@ -35,9 +35,11 @@ import com.mtt.jaapmala.data.local.db.BackupPrefs
 import com.mtt.jaapmala.data.local.db.DatabaseManager
 import com.mtt.presentation.ui.screens.AddMantraDialog
 import com.mtt.presentation.ui.screens.Screens
+import com.mtt.presentation.ui.screens.history.JaapHistoryScreen
 import com.mtt.presentation.ui.screens.home.HomeScreen
 import com.mtt.presentation.ui.screens.home.HomeViewModel
 import com.mtt.presentation.ui.screens.jaap.JaapDetailScreen
+import com.mtt.presentation.ui.screens.jaap.JaapDetailViewModel
 import com.mtt.presentation.ui.screens.onboarding.OnboardingScreen
 import com.mtt.presentation.ui.theme.JaapMalaTheme
 import dagger.hilt.android.AndroidEntryPoint
@@ -133,7 +135,7 @@ class MainActivity : ComponentActivity() {
                             arguments = listOf(navArgument("jaapId") { type = NavType.IntType })
                         ) { backStackEntry ->
                             val jaapId = backStackEntry.arguments?.getInt("jaapId") ?: -1
-                            JaapDetailScreen(jaapId = jaapId, setTitle = { title ->
+                            JaapDetailScreen(jaapId = jaapId,navController, setTitle = { title ->
                                 toolbarTitle.value = title
                             })
                         }
@@ -144,6 +146,18 @@ class MainActivity : ComponentActivity() {
                                     navController.popBackStack()
                                     viewModel.addMantra(name, size)
                                 }
+                            )
+                        }
+                        composable(Screens.JaapHistoryScreen.route,
+                            arguments = listOf(navArgument("jaapId") { type = NavType.IntType })
+                        ) {backStackEntry ->
+
+                            val viewModel: JaapDetailViewModel = hiltViewModel()
+                            val jaapId = backStackEntry.arguments?.getInt("jaapId") ?: -1
+                            JaapHistoryScreen(
+                                jaapId,
+                                viewModel = viewModel,
+                                onBack = { navController.popBackStack() }
                             )
                         }
                     }

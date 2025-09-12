@@ -18,12 +18,17 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -38,16 +43,21 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.navigation.NavController
+import androidx.navigation.compose.rememberNavController
 import com.mtt.jaapmala.R
 import com.mtt.jaapmala.data.local.entity.JaapEntity
 import com.mtt.jaapmala.util.DateUtils
 import com.mtt.jaapmala.util.UIEvent
+import com.mtt.presentation.ui.screens.Screens
 import com.mtt.presentation.ui.screens.app_bar.TopAppBarWithMenu
+import com.mtt.presentation.ui.screens.app_bar.TopBarAction
 import kotlinx.coroutines.flow.collectLatest
 
 @Composable
 fun JaapDetailScreen(
     jaapId: Int,
+    navController: NavController,
     setTitle: (String) -> Unit,
 ) {
     val viewModel: JaapDetailViewModel = hiltViewModel()
@@ -55,7 +65,6 @@ fun JaapDetailScreen(
     val mantra by viewModel.mantra.collectAsState()
     val showDialog by viewModel.showManualEntryDialog.collectAsState()
     val topBarState by viewModel.topBarState.collectAsState()
-
 
     LaunchedEffect(jaapId) {
         viewModel.getMantra(jaapId)
@@ -65,6 +74,19 @@ fun JaapDetailScreen(
         viewModel.uiEvent.collectLatest { event ->
             when (event) {
                 is UIEvent.TriggerFeedback -> triggerFeedback(context)
+            }
+        }
+    }
+    DisposableEffect(Unit) {
+        onDispose {
+            viewModel.saveHistoryForToday()
+        }
+    }
+    LaunchedEffect(Unit) {
+        viewModel.topBarEvent.collect { action ->
+            when (action) {
+                is TopBarAction.History -> { navController.navigate(Screens.JaapHistoryScreen.passJaapId(jaapId))}
+                else -> Unit
             }
         }
     }

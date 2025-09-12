@@ -15,7 +15,8 @@ sealed class TopBarState(
     data class DetailTopBar(
         override val title: String,
         override val actions: List<TopBarAction> = listOf(
-            TopBarAction.IncrementCount
+            TopBarAction.IncrementCount,
+            TopBarAction.History
         )
     ) : TopBarState(title, actions)
 }

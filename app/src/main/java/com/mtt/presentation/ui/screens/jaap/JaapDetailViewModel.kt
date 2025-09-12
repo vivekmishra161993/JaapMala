@@ -3,9 +3,13 @@ package com.mtt.presentation.ui.screens.jaap
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.mtt.jaapmala.data.local.entity.JaapEntity
+import com.mtt.jaapmala.data.local.entity.JaapHistoryEntity
+import com.mtt.jaapmala.domain.usecase.GetJaapHistoryUseCase
 import com.mtt.jaapmala.domain.usecase.GetMantraUseCase
+import com.mtt.jaapmala.domain.usecase.SaveJaapHistoryUseCase
 import com.mtt.jaapmala.domain.usecase.UpdateJaapManuallyUseCase
 import com.mtt.jaapmala.domain.usecase.UpdateJaapUseCase
+import com.mtt.jaapmala.util.DateUtils
 import com.mtt.jaapmala.util.UIEvent
 import com.mtt.presentation.ui.screens.app_bar.TopBarAction
 import com.mtt.presentation.ui.screens.app_bar.TopBarState
@@ -16,13 +20,16 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import java.time.LocalDate
 import javax.inject.Inject
 
 @HiltViewModel
 class JaapDetailViewModel @Inject constructor(
     private val getMantraUseCase: GetMantraUseCase,
     private val updateJaapUseCase: UpdateJaapUseCase,
-    private val updateJaapManuallyUseCase: UpdateJaapManuallyUseCase
+    private val updateJaapManuallyUseCase: UpdateJaapManuallyUseCase,
+    private val saveJaapHistoryUseCase: SaveJaapHistoryUseCase,
+    private val getJaapHistoryUseCase: GetJaapHistoryUseCase
 ) : ViewModel() {
 
     private val _mantra = MutableStateFlow<JaapEntity?>(null)
@@ -42,7 +49,11 @@ class JaapDetailViewModel @Inject constructor(
     )
     val topBarState: StateFlow<TopBarState> = _topBarState
 
+    private val _history = MutableStateFlow<List<JaapHistoryEntity>>(emptyList())
+    val history: StateFlow<List<JaapHistoryEntity>> = _history
 
+    private val _topBarEvent = MutableSharedFlow<TopBarAction>()
+    val topBarEvent = _topBarEvent.asSharedFlow()
     fun getMantra(id: Int) {
         viewModelScope.launch {
             getMantraUseCase(id).collect { entity ->
@@ -127,13 +138,37 @@ class JaapDetailViewModel @Inject constructor(
         }
     }
     fun onTopBarAction(action: TopBarAction) {
-        when (action) {
-            is TopBarAction.IncrementCount -> { _showManualEntryDialog.value = true }
-            else -> {}
+        viewModelScope.launch {
+            when (action) {
+                is TopBarAction.IncrementCount -> { _showManualEntryDialog.value = true }
+                is TopBarAction.History -> { _topBarEvent.emit(TopBarAction.History)}
+                else -> {}
+            }
         }
+
     }
     fun dismissManualEntryDialog() {
         _showManualEntryDialog.value = false
+    }
+    fun saveHistoryForToday() {
+        viewModelScope.launch {
+            val mantra = _mantra.value ?: return@launch
+            val today = LocalDate.now().toString()
+
+            saveJaapHistoryUseCase(
+                jaapId = mantra.id,
+                date = today,
+                count = mantra.todayCount,
+                malaCount = mantra.todayMalaCount
+            )
+        }
+    }
+    fun getHistory(id: Int) {
+        viewModelScope.launch {
+            getJaapHistoryUseCase(id).collect { list ->
+                _history.value = list
+            }
+        }
     }
 
 }

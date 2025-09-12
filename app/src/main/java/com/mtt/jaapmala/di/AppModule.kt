@@ -6,6 +6,7 @@ import android.net.Uri
 import android.widget.Toast
 import androidx.room.Room
 import com.mtt.jaapmala.data.local.dao.JaapDao
+import com.mtt.jaapmala.data.local.dao.JaapHistoryDao
 import com.mtt.jaapmala.data.local.db.AppRestarter
 import com.mtt.jaapmala.data.local.db.BackupPreferences
 import com.mtt.jaapmala.data.local.db.BackupPrefs
@@ -14,8 +15,12 @@ import com.mtt.jaapmala.data.local.db.DatabaseProvider
 import com.mtt.jaapmala.data.local.db.FileHelper
 import com.mtt.jaapmala.data.local.db.JaapDatabase
 import com.mtt.jaapmala.data.local.db.Notifier
+import com.mtt.jaapmala.data.repository.JaapHistoryRepositoryImpl
 import com.mtt.jaapmala.data.repository.JaapRepositoryImpl
+import com.mtt.jaapmala.domain.repository.JaapHistoryRepository
 import com.mtt.jaapmala.domain.repository.JaapRepository
+import com.mtt.jaapmala.domain.usecase.GetJaapHistoryUseCase
+import com.mtt.jaapmala.domain.usecase.SaveJaapHistoryUseCase
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -44,6 +49,10 @@ object AppModule {
         return provider.getDatabase().jaapDao()
     }
     @Provides
+    fun provideJaapHistoryDao(provider: DatabaseProvider): JaapHistoryDao {
+        return provider.getDatabase().jaapHistoryDao()
+    }
+    @Provides
     fun provideRepository(dao: JaapDao):JaapRepository{
         return JaapRepositoryImpl(dao)
     }
@@ -51,11 +60,10 @@ object AppModule {
     fun provideDatabaseManager(@ApplicationContext context: Context,
                               helper: FileHelper,
                               provider: DatabaseProvider,
-                              backupPreferences: BackupPreferences,
                               notifier: Notifier,
                               appRestarter: AppRestarter): DatabaseManager {
         return  DatabaseManager(context,provider,
-            helper,backupPreferences,notifier,appRestarter)
+            helper,notifier,appRestarter)
     }
     @Provides
     @Singleton
@@ -73,7 +81,7 @@ object AppModule {
     }
     @Provides
     @Singleton
-    fun provideBackupPreferences(@ApplicationContext context: Context): BackupPreferences =
+    fun provideBackupPreferences(): BackupPreferences =
         object : BackupPreferences {
             override fun getBackupUri(context: Context): Uri? = BackupPrefs.getBackupUri(context)
             override fun saveBackupUri(context: Context, uri: Uri) = BackupPrefs.saveBackupUri(context, uri)
@@ -98,5 +106,23 @@ object AppModule {
             Runtime.getRuntime().exit(0)
         }
     }
+    @Provides
+    @Singleton
+    fun provideJaapHistoryRepository(
+        dao: JaapHistoryDao
+    ): JaapHistoryRepository {
+        return JaapHistoryRepositoryImpl(dao)
+    }
+    @Provides
+    @Singleton
+    fun provideSaveJaapHistoryUseCase(
+        repository: JaapHistoryRepository
+    ): SaveJaapHistoryUseCase = SaveJaapHistoryUseCase(repository)
+
+    @Provides
+    @Singleton
+    fun provideGetJaapHistoryUseCase(
+        repository: JaapHistoryRepository
+    ): GetJaapHistoryUseCase = GetJaapHistoryUseCase(repository)
 
 }
