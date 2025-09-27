@@ -4,6 +4,7 @@ plugins {
     alias(libs.plugins.hilt)
     id("com.google.devtools.ksp")
     id ("kotlin-parcelize")
+    id("jacoco")
 }
 
 android {
@@ -60,7 +61,6 @@ dependencies {
     implementation(libs.hilt.core)
     implementation(libs.androidx.hilt.navigation.compose)
     implementation(libs.androidx.material3.android)
-    testImplementation(libs.junit.jupiter)
     ksp(libs.hilt.compiler)
     ksp(libs.androidx.hilt.compiler)
     // Room
@@ -68,14 +68,68 @@ dependencies {
     implementation(libs.room.ktx)
     ksp(libs.room.compiler)
     // Unit Test
-    testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.truth)
+    testImplementation(libs.junit)
     testImplementation(libs.mockk)
     testImplementation(libs.turbine)
+
     // Instrumentation
     androidTestImplementation(libs.androidx.junit)
     // Optional: Lifecycle testing
     testImplementation(libs.lifecycle.runtime.testing)
 
 }
+jacoco {
+    toolVersion = "0.8.11" // latest stable
+}
+
+tasks.register<JacocoReport>("jacocoTestReport") {
+    dependsOn("testDebugUnitTest") // ensure unit tests run first
+
+    group = "verification"
+    description = "Generate JaCoCo coverage reports"
+
+    // Report formats
+    reports {
+        xml.required.set(true)
+        html.required.set(true)
+    }
+
+    // Include only domain/data packages
+    val includePackages = listOf(
+        "com/mtt/jaapmala/data/**/*.*",
+        "com/mtt/jaapmala/domain/**/*.*"
+    )
+
+    // Exclude UI, DI, generated classes, tests
+    val excludePackages = listOf(
+        "**/R.class",
+        "**/R$*.class",
+        "**/BuildConfig.*",
+        "**/Manifest*.*",
+        "**/*Test*.*",
+        "com/mtt/jaapmala/main/**/*.*",      // UI
+        "com/mtt/jaapmala/di/**/*.*",        // DI modules
+        "dagger/hilt/internal/**/*.*"        // Hilt generated
+    )
+
+    // Kotlin classes
+    val kotlinTree = fileTree("${buildDir}/tmp/kotlin-classes/debug") {
+        include(includePackages)
+        exclude(excludePackages)
+    }
+
+    // Java classes
+    val javaTree = fileTree("${buildDir}/intermediates/javac/debug") {
+        include(includePackages)
+        exclude(excludePackages)
+    }
+
+    classDirectories.setFrom(files(javaTree, kotlinTree))
+    sourceDirectories.setFrom(files("src/main/java", "src/main/kotlin"))
+    executionData.setFrom(fileTree(buildDir) {
+        include("**/jacoco/testDebugUnitTest.exec")
+    })
+}
+
