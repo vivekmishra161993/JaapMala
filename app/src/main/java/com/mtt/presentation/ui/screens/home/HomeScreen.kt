@@ -1,10 +1,13 @@
 package com.mtt.presentation.ui.screens.home
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -30,8 +33,10 @@ fun HomeScreen(
     viewModel: HomeViewModel,
     navController: NavController,
     onBackupClick: () -> Unit,
-    onRestoreClick: () -> Unit
+    onRestoreClick: () -> Unit,
+    onExit: () -> Unit,
 ) {
+    val showExitDialog by viewModel.showExitDialog.collectAsState()
     val mantras = viewModel.mantras.collectAsState()
     val topBarState by viewModel.topBarState.collectAsState()
     LaunchedEffect(Unit) {
@@ -39,9 +44,16 @@ fun HomeScreen(
             when (action) {
                 is TopBarAction.Backup -> onBackupClick()
                 is TopBarAction.Restore -> onRestoreClick()
+                is TopBarAction.Settings -> {
+                    navController.navigate(Screens.Settings.route)
+                }
                 else -> Unit
             }
         }
+    }
+    // Intercept back press
+    BackHandler {
+        viewModel.onBackPressed()
     }
     Scaffold(
         topBar = {
@@ -58,7 +70,10 @@ fun HomeScreen(
                 Text(
                     "No mantras yet. \nClick + to add a new Mantra",
                     color = MaterialTheme.colorScheme.onBackground,
-                    style = TextStyle(fontWeight = FontWeight.ExtraBold, textAlign = TextAlign.Center),
+                    style = TextStyle(
+                        fontWeight = FontWeight.ExtraBold,
+                        textAlign = TextAlign.Center
+                    ),
                     fontSize = 20.sp
                 )
             }
@@ -83,6 +98,27 @@ fun HomeScreen(
                     )
                 }
             }
+        }
+        // Exit dialog
+        if (showExitDialog) {
+            AlertDialog(
+                onDismissRequest = { viewModel.dismissExitDialog() },
+                title = { Text("Exit App") },
+                text = { Text("Are you sure you want to exit the app?") },
+                confirmButton = {
+                    Button(onClick = {
+                        viewModel.confirmExit()
+                        onExit()
+                    }) {
+                        Text("Yes")
+                    }
+                },
+                dismissButton = {
+                    Button(onClick = { viewModel.dismissExitDialog() }) {
+                        Text("No")
+                    }
+                }
+            )
         }
     }
 }

@@ -36,6 +36,8 @@ class HomeViewModel @Inject constructor(
     val databaseManager: DatabaseManager
 ) : ViewModel() {
     private val refreshTrigger = MutableStateFlow(Unit)
+    private val _showExitDialog = MutableStateFlow(false)
+    val showExitDialog: StateFlow<Boolean> = _showExitDialog
 
     // Expose mantras as StateFlow by collecting from the use case Flow,
     // converting JaapEntities to DTOs
@@ -92,6 +94,7 @@ class HomeViewModel @Inject constructor(
             when (action) {
                 is TopBarAction.Backup -> _topBarEvent.emit(TopBarAction.Backup)
                 is TopBarAction.Restore -> _topBarEvent.emit(TopBarAction.Restore)
+                is TopBarAction.Settings -> _topBarEvent.emit(TopBarAction.Settings)
                 else -> {}
             }
         }
@@ -99,5 +102,18 @@ class HomeViewModel @Inject constructor(
 
     fun refreshData() {
         refreshTrigger.value = Unit
+    }
+
+    fun onBackPressed() {
+        _showExitDialog.value = true
+    }
+
+    fun confirmExit() {
+        _showExitDialog.value = false
+        // Handle actual exit in Activity/Composable
+    }
+
+    fun dismissExitDialog() {
+        _showExitDialog.value = false
     }
 }

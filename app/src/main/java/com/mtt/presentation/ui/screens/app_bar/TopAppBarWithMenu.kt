@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.DropdownMenu
@@ -28,7 +29,8 @@ import androidx.compose.ui.unit.sp
 @Composable
 fun TopAppBarWithMenu(
     topBarState: TopBarState,
-    onActionSelected: (TopBarAction) -> Unit
+    onActionSelected: (TopBarAction) -> Unit,
+    onBack: (() -> Unit)? = null
 ) {
     var expanded by remember { mutableStateOf(false) }
 
@@ -38,10 +40,21 @@ fun TopAppBarWithMenu(
         colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
             containerColor = MaterialTheme.colorScheme.primary,
             titleContentColor = MaterialTheme.colorScheme.onPrimary,
-            navigationIconContentColor = MaterialTheme.colorScheme.onSurface,
-            actionIconContentColor = MaterialTheme.colorScheme.onSurface
+            navigationIconContentColor = MaterialTheme.colorScheme.surface,
+            actionIconContentColor = MaterialTheme.colorScheme.surface
         ),
         title = { Text(topBarState.title) },
+        navigationIcon = {
+            // Show back button only if onBack is provided
+            if (onBack != null) {
+                IconButton(onClick = { onBack() }) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = "Back"
+                    )
+                }
+            }
+        },
         actions = {
             IconButton(onClick = { expanded = true }) {
                 Icon(Icons.Default.MoreVert, contentDescription = "Menu")
@@ -49,7 +62,8 @@ fun TopAppBarWithMenu(
 
             DropdownMenu(
                 expanded = expanded,
-                onDismissRequest = { expanded = false }
+                onDismissRequest = { expanded = false },
+                modifier = Modifier.padding(end = 5.dp)
             ) {
                 topBarState.actions.forEach { action ->
                     DropdownMenuItem(

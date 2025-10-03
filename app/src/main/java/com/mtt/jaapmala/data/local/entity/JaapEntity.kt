@@ -11,8 +11,8 @@ data class JaapEntity(
     val count: Int = 0, // Tracks progress towards next 108
     val todayCount: Int = 0,
     val todayMalaCount: Int = 0,
-    val lifetimeCount: Int = 0,
-    val lifetimeMalaCount: Int = 0,
+    val lifetimeCount: Long = 0L,
+    val lifetimeMalaCount: Long = 0L,
     val sessionCount: Int = 0,
     val sessionMalaCount: Int = 0,
     val malaSize: Int = 108

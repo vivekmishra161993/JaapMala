@@ -6,6 +6,7 @@ import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
+import com.mtt.jaapmala.domain.model.ThemeOption
 
 
 val LightColorScheme = lightColorScheme(
@@ -38,9 +39,16 @@ val DarkColorScheme = darkColorScheme(
 
 @Composable
 fun JaapMalaTheme(
-    darkTheme: Boolean = isSystemInDarkTheme(),
+    themeOption: ThemeOption = ThemeOption.SYSTEM,
     content: @Composable () -> Unit
+
 ) {
+    val darkTheme = when (themeOption) {
+        ThemeOption.LIGHT -> false
+        ThemeOption.DARK -> true
+        ThemeOption.SYSTEM -> isSystemInDarkTheme()
+    }
+
     val colors = if (darkTheme) DarkColorScheme else LightColorScheme
 
     MaterialTheme(

@@ -8,7 +8,8 @@ sealed class TopBarState(
         override val title: String = "Jaap Mala",
         override val actions: List<TopBarAction> = listOf(
             TopBarAction.Backup,
-            TopBarAction.Restore
+            TopBarAction.Restore,
+            TopBarAction.Settings
         )
     ) : TopBarState(title, actions)
 
@@ -16,7 +17,8 @@ sealed class TopBarState(
         override val title: String,
         override val actions: List<TopBarAction> = listOf(
             TopBarAction.IncrementCount,
-            TopBarAction.History
+            TopBarAction.History,
+            TopBarAction.Share
         )
     ) : TopBarState(title, actions)
 }

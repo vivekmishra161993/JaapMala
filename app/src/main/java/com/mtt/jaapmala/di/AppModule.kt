@@ -17,8 +17,10 @@ import com.mtt.jaapmala.data.local.db.JaapDatabase
 import com.mtt.jaapmala.data.local.db.Notifier
 import com.mtt.jaapmala.data.repository.JaapHistoryRepositoryImpl
 import com.mtt.jaapmala.data.repository.JaapRepositoryImpl
+import com.mtt.jaapmala.data.repository.SettingsRepositoryImpl
 import com.mtt.jaapmala.domain.repository.JaapHistoryRepository
 import com.mtt.jaapmala.domain.repository.JaapRepository
+import com.mtt.jaapmala.domain.repository.SettingsRepository
 import com.mtt.jaapmala.domain.usecase.GetJaapHistoryUseCase
 import com.mtt.jaapmala.domain.usecase.SaveJaapHistoryUseCase
 import dagger.Module
@@ -125,4 +127,11 @@ object AppModule {
         repository: JaapHistoryRepository
     ): GetJaapHistoryUseCase = GetJaapHistoryUseCase(repository)
 
+    @Provides
+    @Singleton
+    fun provideSettingsRepository(
+        @ApplicationContext context: Context
+    ): SettingsRepository {
+        return SettingsRepositoryImpl(context)
+    }
 }

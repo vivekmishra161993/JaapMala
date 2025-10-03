@@ -5,8 +5,8 @@ data class MantraDto(
     val date:String,
     var todayCount:Int,
     var malaCount:Int,
-    val lifetimeCount:Int,
-    var lifetimeMalaCount:Int,
+    val lifetimeCount: Long,
+    var lifetimeMalaCount: Long,
     var id:Int,
     var currentCount:Int,
     var malaSize: Int = 108

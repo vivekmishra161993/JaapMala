@@ -1,0 +1,46 @@
+package com.mtt.presentation.ui.screens.settings
+
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.mtt.jaapmala.domain.model.ReminderOption
+import com.mtt.jaapmala.domain.model.ThemeOption
+import com.mtt.jaapmala.domain.repository.SettingsRepository
+import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
+import javax.inject.Inject
+
+@HiltViewModel
+class SettingsViewModel @Inject constructor(
+    private val repo: SettingsRepository
+) : ViewModel() {
+
+    val themeOption = repo.themeOption.stateIn(
+        viewModelScope,
+        SharingStarted.WhileSubscribed(),
+        ThemeOption.SYSTEM
+    )
+    val reminderOption = repo.reminderOption.stateIn(
+        viewModelScope,
+        SharingStarted.WhileSubscribed(),
+        ReminderOption.OFF
+    )
+
+    val meditationSoundEnabled = repo.meditationSoundEnabled.stateIn(
+        viewModelScope,
+        SharingStarted.WhileSubscribed(),
+        true
+    )
+
+    fun updateReminder(option: ReminderOption) {
+        viewModelScope.launch { repo.setReminderOption(option) }
+    }
+
+    fun toggleMeditationSound(enabled: Boolean) {
+        viewModelScope.launch { repo.setMeditationSound(enabled) }
+    }
+    fun updateTheme(option: ThemeOption) {
+        viewModelScope.launch { repo.setThemeOption(option) }
+    }
+}

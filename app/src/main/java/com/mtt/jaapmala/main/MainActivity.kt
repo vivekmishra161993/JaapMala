@@ -17,6 +17,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SmallFloatingActionButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -33,6 +34,8 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.mtt.jaapmala.data.local.db.BackupPrefs
 import com.mtt.jaapmala.data.local.db.DatabaseManager
+import com.mtt.jaapmala.domain.model.ThemeOption
+import com.mtt.jaapmala.domain.repository.SettingsRepository
 import com.mtt.presentation.ui.screens.AddMantraDialog
 import com.mtt.presentation.ui.screens.Screens
 import com.mtt.presentation.ui.screens.history.JaapHistoryScreen
@@ -41,11 +44,16 @@ import com.mtt.presentation.ui.screens.home.HomeViewModel
 import com.mtt.presentation.ui.screens.jaap.JaapDetailScreen
 import com.mtt.presentation.ui.screens.jaap.JaapDetailViewModel
 import com.mtt.presentation.ui.screens.onboarding.OnboardingScreen
+import com.mtt.presentation.ui.screens.settings.SettingsScreen
 import com.mtt.presentation.ui.theme.JaapMalaTheme
 import dagger.hilt.android.AndroidEntryPoint
+import javax.inject.Inject
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+    @Inject
+    lateinit var settingsRepository: SettingsRepository
+
     @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -58,6 +66,8 @@ class MainActivity : ComponentActivity() {
             val navBackStackEntry by navController.currentBackStackEntryAsState()
             val currentDestination = navBackStackEntry?.destination?.route
             val context = LocalContext.current
+            val themeOption by settingsRepository.themeOption.collectAsState(initial = ThemeOption.SYSTEM)
+
             val showOnboarding = remember {
                 !BackupPrefs.isOnboardingShown(context)
             }
@@ -90,7 +100,7 @@ class MainActivity : ComponentActivity() {
                 }
             }
 
-            JaapMalaTheme {
+            JaapMalaTheme(themeOption) {
                 Scaffold(
                     modifier = Modifier.fillMaxSize(),
                     contentColor = MaterialTheme.colorScheme.background,
@@ -126,7 +136,10 @@ class MainActivity : ComponentActivity() {
                                 viewModel,
                                 navController,
                                 onBackupClick = { backupManager.backupDatabase() },
-                                onRestoreClick = { backupManager.restoreDatabase() }
+                                onRestoreClick = { backupManager.restoreDatabase() },
+                                onExit = {
+                                    finish()
+                                }
                             )
                             toolbarTitle.value = "Jaap Mala"
                         }
@@ -159,6 +172,9 @@ class MainActivity : ComponentActivity() {
                                 viewModel = viewModel,
                                 onBack = { navController.popBackStack() }
                             )
+                        }
+                        composable(Screens.Settings.route){
+                            SettingsScreen(navController)
                         }
                     }
                 }

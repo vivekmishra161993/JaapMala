@@ -57,6 +57,7 @@ dependencies {
     implementation(libs.androidx.ui)
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.ui.tooling.preview)
+    implementation(libs.dataStore)
     // Hilt
     implementation(libs.hilt.core)
     implementation(libs.androidx.hilt.navigation.compose)

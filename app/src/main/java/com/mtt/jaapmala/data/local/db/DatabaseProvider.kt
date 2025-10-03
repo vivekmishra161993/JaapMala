@@ -25,7 +25,9 @@ class DatabaseProvider @Inject constructor(
         return Room.databaseBuilder(
             context, JaapDatabase::class.java, Constants.DB_NAME
         ).setJournalMode(RoomDatabase.JournalMode.TRUNCATE).fallbackToDestructiveMigration()
-            .addMigrations(MIGRATION_1_2).build()
+            .addMigrations(MIGRATION_1_2)
+            .addMigrations(MIGRATION_2_3)
+            .build()
     }
 
     fun closeDatabase() {

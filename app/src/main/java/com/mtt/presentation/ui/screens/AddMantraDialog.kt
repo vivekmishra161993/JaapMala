@@ -85,7 +85,12 @@ fun AddMantraDialog(
                 // Mala Size Input
                 OutlinedTextField(
                     value = malaSize,
-                    onValueChange = { malaSize = it },
+                    onValueChange = {newValue->
+                        // Allow only digits
+                        if (newValue.all { it.isDigit() }) {
+                            malaSize = newValue
+                        }
+                    },
                     label = { Text("Enter Mala Size") },
                     placeholder = { Text("e.g. 108") },
                     keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Number),
@@ -119,7 +124,8 @@ fun AddMantraDialog(
                     Button(
                         onClick = {
                             if (name.isNotBlank() && malaSize.isNotBlank()) {
-                                val malaSizeInt = malaSize.toIntOrNull() ?: 108 // Default to 108 if input is invalid
+                                val malaSizeInt = malaSize.toIntOrNull()
+                                    ?: 108 // Default to 108 if input is invalid
                                 onSubmit(name.trim(), malaSizeInt)  // Pass both name and malaSize
                             }
                         },
@@ -143,6 +149,7 @@ fun AddMantraDialog(
         }
     }
 }
+
 @Composable
 @Preview(showBackground = true)
 fun PreviewAddMantraDialog() {

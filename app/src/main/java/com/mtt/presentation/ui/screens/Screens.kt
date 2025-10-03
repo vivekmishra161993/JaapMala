@@ -10,4 +10,5 @@ sealed class Screens(val route: String) {
     data object JaapHistoryScreen : Screens("jaap_history/{jaapId}"){
         fun passJaapId(id: Int): String = "jaap_history/$id"
     }
+    object Settings : Screens("settings")
 }

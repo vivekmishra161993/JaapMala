@@ -1,5 +1,7 @@
 package com.mtt.presentation.ui.screens.jaap
 
+import android.content.Context
+import android.content.Intent
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.mtt.jaapmala.data.local.entity.JaapEntity
@@ -9,7 +11,6 @@ import com.mtt.jaapmala.domain.usecase.GetMantraUseCase
 import com.mtt.jaapmala.domain.usecase.SaveJaapHistoryUseCase
 import com.mtt.jaapmala.domain.usecase.UpdateJaapManuallyUseCase
 import com.mtt.jaapmala.domain.usecase.UpdateJaapUseCase
-import com.mtt.jaapmala.util.DateUtils
 import com.mtt.jaapmala.util.UIEvent
 import com.mtt.presentation.ui.screens.app_bar.TopBarAction
 import com.mtt.presentation.ui.screens.app_bar.TopBarState
@@ -137,11 +138,12 @@ class JaapDetailViewModel @Inject constructor(
             }
         }
     }
-    fun onTopBarAction(action: TopBarAction) {
+    fun onTopBarAction(action: TopBarAction,context: Context) {
         viewModelScope.launch {
             when (action) {
                 is TopBarAction.IncrementCount -> { _showManualEntryDialog.value = true }
                 is TopBarAction.History -> { _topBarEvent.emit(TopBarAction.History)}
+                is TopBarAction.Share -> {shareProgress(context )}
                 else -> {}
             }
         }
@@ -170,5 +172,22 @@ class JaapDetailViewModel @Inject constructor(
             }
         }
     }
+    fun shareProgress(context: Context) {
+        val appLink = "https://play.google.com/store/apps/details?id=com.mtt.jaapmala"
+        val shareText = """
+            I am practicing "${_mantra.value?.name}" using Jaap Mala app!
+            Today's count: ${_mantra.value?.todayCount}
+            Lifetime count: ${_mantra.value?.lifetimeCount}
+            Download the app here: $appLink
+        """.trimIndent()
 
+        val sendIntent = Intent().apply {
+            action = Intent.ACTION_SEND
+            putExtra(Intent.EXTRA_TEXT, shareText)
+            type = "text/plain"
+        }
+
+        val shareIntent = Intent.createChooser(sendIntent, "Share your Jaap progress")
+        context.startActivity(shareIntent)
+    }
 }
