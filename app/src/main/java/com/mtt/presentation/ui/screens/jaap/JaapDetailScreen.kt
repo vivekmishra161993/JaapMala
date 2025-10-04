@@ -1,12 +1,13 @@
 package com.mtt.presentation.ui.screens.jaap
 
 import android.Manifest
+import android.content.BroadcastReceiver
 import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
 import android.media.MediaPlayer
-import android.os.Build
 import android.os.VibrationEffect
 import android.os.Vibrator
-import androidx.activity.ComponentActivity
 import androidx.annotation.RequiresPermission
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.clickable
@@ -47,8 +48,6 @@ import com.mtt.jaapmala.R
 import com.mtt.jaapmala.data.local.entity.JaapEntity
 import com.mtt.jaapmala.util.DateUtils
 import com.mtt.jaapmala.util.UIEvent
-import com.mtt.jaapmala.util.disableImmersiveMode
-import com.mtt.jaapmala.util.enableImmersiveMode
 import com.mtt.presentation.ui.screens.Screens
 import com.mtt.presentation.ui.screens.app_bar.TopAppBarWithMenu
 import com.mtt.presentation.ui.screens.app_bar.TopBarAction
@@ -65,10 +64,8 @@ fun JaapDetailScreen(
     val mantra by viewModel.mantra.collectAsState()
     val showDialog by viewModel.showManualEntryDialog.collectAsState()
     val topBarState by viewModel.topBarState.collectAsState()
-    LaunchedEffect(Unit) {
-        // Enable immersive mode when this screen appears
-        (context as? ComponentActivity)?.enableImmersiveMode()
-    }
+    val meditationSoundEnabled by viewModel.meditationSoundEnabled.collectAsState()
+
     LaunchedEffect(jaapId) {
         viewModel.getMantra(jaapId)
     }
@@ -80,45 +77,71 @@ fun JaapDetailScreen(
             }
         }
     }
+
     LaunchedEffect(Unit) {
         viewModel.topBarEvent.collect { action ->
             when (action) {
-                is TopBarAction.History -> { navController.navigate(Screens.JaapHistoryScreen.passJaapId(jaapId))}
+                is TopBarAction.History -> {
+                    navController.navigate(Screens.JaapHistoryScreen.passJaapId(jaapId))
+                }
                 else -> Unit
             }
         }
     }
-    DisposableEffect(Unit) {
-        onDispose {
-            viewModel.saveHistoryForToday()
-        }
-    }
-    // Disable immersive mode when leaving this screen
-    DisposableEffect(Unit) {
-        onDispose {
-            (context as? ComponentActivity)?.disableImmersiveMode()
+    LaunchedEffect(meditationSoundEnabled) {
+        if (meditationSoundEnabled) {
+            viewModel.startMeditationSound() // Start immediately on screen enter
+        } else {
+            viewModel.stopMeditationSound()
         }
     }
 
-// Show dialog
+    // --- Meditation Sound Handling with Screen Lock/Unlock ---
+    val screenReceiver = remember {
+        object : BroadcastReceiver() {
+            override fun onReceive(context: Context?, intent: Intent?) {
+                when (intent?.action) {
+                    Intent.ACTION_SCREEN_OFF -> viewModel.stopMeditationSound()
+                    Intent.ACTION_USER_PRESENT -> {
+                        if (meditationSoundEnabled) viewModel.startMeditationSound()
+                    }
+                }
+            }
+        }
+    }
+
+    DisposableEffect(Unit) {
+        val filter = IntentFilter().apply {
+            addAction(Intent.ACTION_SCREEN_OFF)
+            addAction(Intent.ACTION_USER_PRESENT)
+        }
+        context.registerReceiver(screenReceiver, filter)
+
+        // Also handle normal composable dispose
+        onDispose {
+            context.unregisterReceiver(screenReceiver)
+            viewModel.stopMeditationSound()
+        }
+    }
+
+    // Show dialog
     if (showDialog) {
         ManualJaapEntryDialog(
             onSubmit = { enteredCount ->
                 viewModel.dismissManualEntryDialog()
                 viewModel.updateJaapCountManually(jaapId, enteredCount)
             },
-            onDismiss = {
-                viewModel.dismissManualEntryDialog()
-            }
+            onDismiss = { viewModel.dismissManualEntryDialog() }
         )
     }
+
     mantra?.let { detail ->
         setTitle(detail.name)
         Scaffold(topBar = {
             TopAppBarWithMenu(
                 topBarState,
-                onActionSelected = { viewModel.onTopBarAction(it,context) },
-                onBack = {navController.popBackStack()}
+                onActionSelected = { viewModel.onTopBarAction(it, context) },
+                onBack = { navController.popBackStack() }
             )
         }) { padding ->
             Column(
@@ -139,39 +162,31 @@ fun JaapDetailScreen(
                 )
 
                 Spacer(modifier = Modifier.height(24.dp))
-
                 StatsSection(detail)
-
                 Spacer(modifier = Modifier.height(36.dp))
 
-                // Undo button works independently
                 Button(
                     onClick = { viewModel.decreaseCount() },
                     modifier = Modifier
                         .align(Alignment.CenterHorizontally)
                         .size(100.dp)
-                ) {
-                    Text("Undo")
-                }
+                ) { Text("Undo") }
 
                 Spacer(modifier = Modifier.height(24.dp))
 
-                // Whole lower half is clickable
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .weight(1f) // take all remaining lower half space
+                        .weight(1f)
                         .clickable(
                             interactionSource = remember { MutableInteractionSource() },
                             indication = null
-                        ) {
-                            viewModel.increaseCount()
-                        },
+                        ) { viewModel.increaseCount() },
                     contentAlignment = Alignment.Center
                 ) {
                     ProgressCountButton(
                         currentCount = detail.count,
-                        onClick = { viewModel.increaseCount() }, // still clickable on progress button
+                        onClick = { viewModel.increaseCount() },
                         malaSize = detail.malaSize
                     )
                 }
@@ -179,18 +194,17 @@ fun JaapDetailScreen(
         }
     } ?: run {
         Box(
-            modifier = Modifier.fillMaxSize()
+            modifier = Modifier
+                .fillMaxSize()
                 .clickable(
                     interactionSource = remember { MutableInteractionSource() },
                     indication = null
                 ) {},
             contentAlignment = Alignment.Center,
-        ) {
-            CircularProgressIndicator()
-        }
+        ) { CircularProgressIndicator() }
     }
-
 }
+
 
 @Composable
 fun StatsSection(mantra: JaapEntity) {
@@ -309,14 +323,9 @@ fun JaapDetailScreenPreview() {
 @RequiresPermission(Manifest.permission.VIBRATE)
 private fun triggerFeedback(context: Context) {
     val vibrator = context.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-        vibrator.vibrate(
-            VibrationEffect.createOneShot(300, VibrationEffect.DEFAULT_AMPLITUDE)
-        )
-    } else {
-        // Deprecated method for older devices
-        vibrator.vibrate(300)
-    }
+    vibrator.vibrate(
+        VibrationEffect.createOneShot(300, VibrationEffect.DEFAULT_AMPLITUDE)
+    )
 
     playMalaCompletionSound(context)
 }

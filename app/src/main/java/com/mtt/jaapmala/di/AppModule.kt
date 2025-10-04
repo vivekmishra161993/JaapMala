@@ -5,6 +5,7 @@ import android.content.Intent
 import android.net.Uri
 import android.widget.Toast
 import androidx.room.Room
+import com.mtt.jaapmala.data.MeditationSoundManager
 import com.mtt.jaapmala.data.local.dao.JaapDao
 import com.mtt.jaapmala.data.local.dao.JaapHistoryDao
 import com.mtt.jaapmala.data.local.db.AppRestarter
@@ -23,6 +24,7 @@ import com.mtt.jaapmala.domain.repository.JaapRepository
 import com.mtt.jaapmala.domain.repository.SettingsRepository
 import com.mtt.jaapmala.domain.usecase.GetJaapHistoryUseCase
 import com.mtt.jaapmala.domain.usecase.SaveJaapHistoryUseCase
+import com.mtt.jaapmala.util.ReminderScheduler
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -38,35 +40,45 @@ import javax.inject.Singleton
 object AppModule {
     @Provides
     @Singleton
-    fun providesDatabase(@ApplicationContext context: Context):JaapDatabase{
-        return Room.databaseBuilder(context,JaapDatabase::class.java,"JaapMala").build()
+    fun providesDatabase(@ApplicationContext context: Context): JaapDatabase {
+        return Room.databaseBuilder(context, JaapDatabase::class.java, "JaapMala").build()
     }
+
     @Provides
     @Singleton
     fun provideDatabaseProvider(@ApplicationContext context: Context): DatabaseProvider {
         return DatabaseProvider(context)
     }
+
     @Provides
     fun provideJaapDao(provider: DatabaseProvider): JaapDao {
         return provider.getDatabase().jaapDao()
     }
+
     @Provides
     fun provideJaapHistoryDao(provider: DatabaseProvider): JaapHistoryDao {
         return provider.getDatabase().jaapHistoryDao()
     }
+
     @Provides
-    fun provideRepository(dao: JaapDao):JaapRepository{
+    fun provideRepository(dao: JaapDao): JaapRepository {
         return JaapRepositoryImpl(dao)
     }
+
     @Provides
-    fun provideDatabaseManager(@ApplicationContext context: Context,
-                              helper: FileHelper,
-                              provider: DatabaseProvider,
-                              notifier: Notifier,
-                              appRestarter: AppRestarter): DatabaseManager {
-        return  DatabaseManager(context,provider,
-            helper,notifier,appRestarter)
+    fun provideDatabaseManager(
+        @ApplicationContext context: Context,
+        helper: FileHelper,
+        provider: DatabaseProvider,
+        notifier: Notifier,
+        appRestarter: AppRestarter
+    ): DatabaseManager {
+        return DatabaseManager(
+            context, provider,
+            helper, notifier, appRestarter
+        )
     }
+
     @Provides
     @Singleton
     fun provideFileHelper(): FileHelper = object : FileHelper {
@@ -81,23 +93,28 @@ object AppModule {
 
         override fun fileExists(file: File): Boolean = file.exists()
     }
+
     @Provides
     @Singleton
     fun provideBackupPreferences(): BackupPreferences =
         object : BackupPreferences {
             override fun getBackupUri(context: Context): Uri? = BackupPrefs.getBackupUri(context)
-            override fun saveBackupUri(context: Context, uri: Uri) = BackupPrefs.saveBackupUri(context, uri)
+            override fun saveBackupUri(context: Context, uri: Uri) =
+                BackupPrefs.saveBackupUri(context, uri)
         }
+
     @Provides
     @Singleton
     fun provideNotifier(): Notifier = object : Notifier {
         override fun showToast(context: Context, message: String, duration: Int) {
             Toast.makeText(context, message, duration).show()
         }
+
         override fun logError(tag: String, message: String, throwable: Throwable?) {
             android.util.Log.e(tag, message, throwable)
         }
     }
+
     @Provides
     @Singleton
     fun provideAppRestarter(): AppRestarter = object : AppRestarter {
@@ -108,6 +125,7 @@ object AppModule {
             Runtime.getRuntime().exit(0)
         }
     }
+
     @Provides
     @Singleton
     fun provideJaapHistoryRepository(
@@ -115,6 +133,7 @@ object AppModule {
     ): JaapHistoryRepository {
         return JaapHistoryRepositoryImpl(dao)
     }
+
     @Provides
     @Singleton
     fun provideSaveJaapHistoryUseCase(
@@ -133,5 +152,19 @@ object AppModule {
         @ApplicationContext context: Context
     ): SettingsRepository {
         return SettingsRepositoryImpl(context)
+    }
+
+    @Provides
+    @Singleton
+    fun provideReminderScheduler(
+        @ApplicationContext context: Context
+    ): ReminderScheduler = ReminderScheduler(context)
+
+    @Provides
+    @Singleton
+    fun provideMeditationSoundManager(
+        @ApplicationContext context: Context
+    ): MeditationSoundManager {
+        return MeditationSoundManager(context)
     }
 }

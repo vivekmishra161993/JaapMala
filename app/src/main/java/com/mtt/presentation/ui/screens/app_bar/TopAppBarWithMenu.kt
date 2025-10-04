@@ -35,7 +35,7 @@ fun TopAppBarWithMenu(
     var expanded by remember { mutableStateOf(false) }
 
     CenterAlignedTopAppBar(
-        modifier =Modifier.shadow(elevation = 10.dp),
+        modifier = Modifier.shadow(elevation = 10.dp),
 
         colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
             containerColor = MaterialTheme.colorScheme.primary,
@@ -50,14 +50,19 @@ fun TopAppBarWithMenu(
                 IconButton(onClick = { onBack() }) {
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = "Back"
+                        contentDescription = "Back",
+                        tint = MaterialTheme.colorScheme.onPrimary
                     )
                 }
             }
         },
         actions = {
             IconButton(onClick = { expanded = true }) {
-                Icon(Icons.Default.MoreVert, contentDescription = "Menu")
+                Icon(
+                    Icons.Default.MoreVert,
+                    contentDescription = "Menu",
+                    tint = MaterialTheme.colorScheme.onPrimary
+                )
             }
 
             DropdownMenu(
@@ -67,12 +72,16 @@ fun TopAppBarWithMenu(
             ) {
                 topBarState.actions.forEach { action ->
                     DropdownMenuItem(
-                        text = { Text(action.title,fontSize = 18.sp,
-                            modifier = Modifier.padding(vertical = 8.dp)) },
+                        text = {
+                            Text(
+                                action.title, fontSize = 18.sp,
+                                modifier = Modifier.padding(vertical = 8.dp)
+                            )
+                        },
                         onClick = {
                             expanded = false
                             onActionSelected(action)
-                        },modifier = Modifier
+                        }, modifier = Modifier
                             .fillMaxWidth()
                             .height(56.dp)
                     )

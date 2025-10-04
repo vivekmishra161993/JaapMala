@@ -1,5 +1,12 @@
 package com.mtt.presentation.ui.screens.settings
 
+import android.Manifest
+import android.app.TimePickerDialog
+import android.content.pm.PackageManager
+import android.os.Build
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -25,11 +32,14 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
-import com.mtt.jaapmala.domain.model.ReminderOption
 import com.mtt.jaapmala.domain.model.ThemeOption
+import com.mtt.jaapmala.util.DateUtils
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -37,10 +47,23 @@ fun SettingsScreen(
     navController: NavController,
     viewModel: SettingsViewModel = hiltViewModel()
 ) {
-    val reminderOption by viewModel.reminderOption.collectAsState()
     val meditationSoundEnabled by viewModel.meditationSoundEnabled.collectAsState()
     val themeOption by viewModel.themeOption.collectAsState()
-
+    val isReminderEnabled by viewModel.isDailyReminderEnabled.collectAsState()
+    val reminderTime by viewModel.reminderTime.collectAsState()
+    val context = LocalContext.current
+    // Launcher to request POST_NOTIFICATIONS
+    val notificationPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (!isGranted) {
+            Toast.makeText(context, "Notifications disabled", Toast.LENGTH_SHORT).show()
+            // reset reminder if permission not granted
+            viewModel.toggleDailyReminder(false)
+        }else{
+            viewModel.toggleDailyReminder(true)
+        }
+    }
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
@@ -48,7 +71,11 @@ fun SettingsScreen(
                 title = { Text("Settings") },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(
+                            Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Back",
+                            tint = MaterialTheme.colorScheme.onPrimary
+                        )
                     }
                 },
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
@@ -63,35 +90,84 @@ fun SettingsScreen(
     ) { padding ->
 
         Column(
-            modifier = Modifier.padding(
-                top = padding.calculateTopPadding(),
-                start = 20.dp, end = 20.dp
-            )
+            modifier = Modifier
+                .padding(
+                    top = padding.calculateTopPadding(),
+                    start = 20.dp,
+                    end = 20.dp
+                )
+                .fillMaxWidth()
         ) {
-            // Daily Reminder Section
-            Text(
-                "Daily Reminder",
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onBackground,
-                modifier = Modifier.padding(15.dp)
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            ReminderOption.entries.forEach { option ->
+            // Daily Reminder Toggle
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(
+                    "Daily Reminder",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onBackground
+                )
+                Spacer(modifier = Modifier.weight(1f))
+                Switch(
+                    checked = isReminderEnabled,
+                    onCheckedChange = { enabled ->
+                        if (enabled) {
+                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                                val hasPermission = ContextCompat.checkSelfPermission(
+                                    context,
+                                    Manifest.permission.POST_NOTIFICATIONS
+                                ) == PackageManager.PERMISSION_GRANTED
+
+                                if (!hasPermission) {
+                                    notificationPermissionLauncher.launch(
+                                        Manifest.permission.POST_NOTIFICATIONS
+                                    )
+                                } else {
+                                    viewModel.toggleDailyReminder(true)
+                                }
+                            } else {
+                                viewModel.toggleDailyReminder(true)
+                            }
+                        } else {
+                            viewModel.toggleDailyReminder(false)
+                        }
+                    }
+                )
+            }
+
+            // Reminder Time (only if enabled)
+            if (isReminderEnabled) {
+                Spacer(modifier = Modifier.height(8.dp))
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clickable { viewModel.updateReminder(option) }
+                        .clickable {
+                            // Open Android TimePickerDialog
+                            val (hour, minute) = reminderTime.split(":").map { it.toInt() }
+                            TimePickerDialog(
+                                context,
+                                { _, selectedHour, selectedMinute ->
+                                    val newTime = "%02d:%02d".format(selectedHour, selectedMinute)
+                                    viewModel.updateReminderTime(newTime)
+                                },
+                                hour,
+                                minute,
+                                false
+                            ).show()
+                        }
                         .padding(vertical = 8.dp)
                 ) {
-                    RadioButton(
-                        selected = reminderOption == option,
-                        onClick = { viewModel.updateReminder(option) }
-                    )
                     Text(
-                        option.displayName,
-                        modifier = Modifier.padding(start = 8.dp),
+                        "Reminder Time",
                         color = MaterialTheme.colorScheme.onBackground
+                    )
+                    Spacer(modifier = Modifier.weight(1f))
+                    Text(
+                        DateUtils.formatTimeTo12Hour(reminderTime),
+                        color = MaterialTheme.colorScheme.primary,
+                        fontWeight = FontWeight.Bold
                     )
                 }
             }
@@ -119,8 +195,10 @@ fun SettingsScreen(
                     onCheckedChange = { viewModel.toggleMeditationSound(it) }
                 )
             }
+
             Spacer(modifier = Modifier.height(24.dp))
 
+            // Theme Section
             Text(
                 "Theme",
                 style = MaterialTheme.typography.titleMedium,

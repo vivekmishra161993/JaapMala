@@ -4,10 +4,13 @@ import android.content.Context
 import android.content.Intent
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.mtt.jaapmala.R
+import com.mtt.jaapmala.data.MeditationSoundManager
 import com.mtt.jaapmala.data.local.entity.JaapEntity
 import com.mtt.jaapmala.data.local.entity.JaapHistoryEntity
 import com.mtt.jaapmala.domain.usecase.GetJaapHistoryUseCase
 import com.mtt.jaapmala.domain.usecase.GetMantraUseCase
+import com.mtt.jaapmala.domain.usecase.GetMeditationSoundEnabledUseCase
 import com.mtt.jaapmala.domain.usecase.SaveJaapHistoryUseCase
 import com.mtt.jaapmala.domain.usecase.UpdateJaapManuallyUseCase
 import com.mtt.jaapmala.domain.usecase.UpdateJaapUseCase
@@ -17,9 +20,11 @@ import com.mtt.presentation.ui.screens.app_bar.TopBarState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 import javax.inject.Inject
@@ -30,7 +35,9 @@ class JaapDetailViewModel @Inject constructor(
     private val updateJaapUseCase: UpdateJaapUseCase,
     private val updateJaapManuallyUseCase: UpdateJaapManuallyUseCase,
     private val saveJaapHistoryUseCase: SaveJaapHistoryUseCase,
-    private val getJaapHistoryUseCase: GetJaapHistoryUseCase
+    private val getJaapHistoryUseCase: GetJaapHistoryUseCase,
+    private val getMeditationSoundEnabledUseCase: GetMeditationSoundEnabledUseCase,
+    private val meditationSoundManager: MeditationSoundManager
 ) : ViewModel() {
 
     private val _mantra = MutableStateFlow<JaapEntity?>(null)
@@ -55,6 +62,9 @@ class JaapDetailViewModel @Inject constructor(
 
     private val _topBarEvent = MutableSharedFlow<TopBarAction>()
     val topBarEvent = _topBarEvent.asSharedFlow()
+    val meditationSoundEnabled = getMeditationSoundEnabledUseCase()
+        .stateIn(viewModelScope, SharingStarted.Lazily, false)
+
     fun getMantra(id: Int) {
         viewModelScope.launch {
             getMantraUseCase(id).collect { entity ->
@@ -82,7 +92,7 @@ class JaapDetailViewModel @Inject constructor(
                 newMalaCount += 1
                 newLifetimeMalaCount += 1
                 newSessionMalaCount += 1
-
+                fadeOutMeditationSound()
                 viewModelScope.launch {
                     _uiEvent.emit(UIEvent.TriggerFeedback)
                 }
@@ -189,5 +199,19 @@ class JaapDetailViewModel @Inject constructor(
 
         val shareIntent = Intent.createChooser(sendIntent, "Share your Jaap progress")
         context.startActivity(shareIntent)
+    }
+    fun startMeditationSound() {
+        if (meditationSoundEnabled.value) {
+            meditationSoundManager.playSound(R.raw.sound)
+        }
+    }
+
+    fun stopMeditationSound() {
+        meditationSoundManager.stopSound()
+    }
+    private fun fadeOutMeditationSound() {
+        if (meditationSoundEnabled.value) {
+            meditationSoundManager.fadeOutAndStop()
+        }
     }
 }

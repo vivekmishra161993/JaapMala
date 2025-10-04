@@ -8,7 +8,16 @@ interface SettingsRepository {
     val reminderOption: Flow<ReminderOption>
     val meditationSoundEnabled: Flow<Boolean>
     val themeOption: Flow<ThemeOption>
+    // New
+    val isDailyReminderEnabled: Flow<Boolean>
+    val reminderTime: Flow<String>
     suspend fun setReminderOption(option: ReminderOption)
     suspend fun setMeditationSound(enabled: Boolean)
     suspend fun setThemeOption(option: ThemeOption)
+
+    suspend fun scheduleDailyReminder(timeInMillis: Long)
+    suspend fun cancelDailyReminder()
+
+    suspend fun setDailyReminderEnabled(enabled: Boolean)
+    suspend fun setReminderTime(time: String)
 }

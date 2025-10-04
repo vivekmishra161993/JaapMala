@@ -1,13 +1,19 @@
 package com.mtt.jaapmala.data.repository
 
+import android.app.AlarmManager
+import android.app.PendingIntent
 import android.content.Context
+import android.content.Intent
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
+import com.mtt.jaapmala.data.repository.SettingsRepositoryImpl.PreferencesKeys.KEY_REMINDER_ENABLED
+import com.mtt.jaapmala.data.repository.SettingsRepositoryImpl.PreferencesKeys.KEY_REMINDER_TIME
 import com.mtt.jaapmala.domain.model.ReminderOption
 import com.mtt.jaapmala.domain.model.ThemeOption
 import com.mtt.jaapmala.domain.repository.SettingsRepository
+import com.mtt.presentation.ui.ReminderReceiver
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -25,7 +31,8 @@ class SettingsRepositoryImpl @Inject constructor(
         val REMINDER_OPTION = stringPreferencesKey("reminder_option")
         val MEDITATION_SOUND = booleanPreferencesKey("meditation_sound")
         val THEME_OPTION = stringPreferencesKey("theme_option")
-
+        val KEY_REMINDER_ENABLED = booleanPreferencesKey("daily_reminder_enabled")
+        val KEY_REMINDER_TIME = stringPreferencesKey("daily_reminder_time")
     }
 
     override val themeOption: Flow<ThemeOption> = context.dataStore.data
@@ -33,6 +40,11 @@ class SettingsRepositoryImpl @Inject constructor(
             val value = prefs[PreferencesKeys.THEME_OPTION]
             ThemeOption.entries.find { it.name == value } ?: ThemeOption.SYSTEM
         }
+    override val isDailyReminderEnabled: Flow<Boolean>
+        = context.dataStore.data.map { prefs -> prefs[KEY_REMINDER_ENABLED] ?: false }
+    override val reminderTime: Flow<String>
+        = context.dataStore.data.map { prefs -> prefs[KEY_REMINDER_TIME] ?: "20:00" }
+
     override val reminderOption: Flow<ReminderOption> = context.dataStore.data
         .map { prefs ->
             val value = prefs[PreferencesKeys.REMINDER_OPTION]
@@ -59,5 +71,43 @@ class SettingsRepositoryImpl @Inject constructor(
         context.dataStore.edit { prefs ->
             prefs[PreferencesKeys.THEME_OPTION] = option.name
         }
+    }
+
+    override suspend fun scheduleDailyReminder(timeInMillis: Long) {
+        val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+        val intent = Intent(context, ReminderReceiver::class.java)
+        val pendingIntent = PendingIntent.getBroadcast(
+            context,
+            0,
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
+        alarmManager.setRepeating(
+            AlarmManager.RTC_WAKEUP,
+            timeInMillis,
+            AlarmManager.INTERVAL_DAY,
+            pendingIntent
+        )
+    }
+
+    override suspend fun cancelDailyReminder() {
+        val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+        val intent = Intent(context, ReminderReceiver::class.java)
+        val pendingIntent = PendingIntent.getBroadcast(
+            context,
+            0,
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+        alarmManager.cancel(pendingIntent)
+    }
+
+    override suspend fun setDailyReminderEnabled(enabled: Boolean) {
+        context.dataStore.edit { it[KEY_REMINDER_ENABLED] = enabled }
+    }
+
+    override suspend fun setReminderTime(time: String) {
+        context.dataStore.edit { it[KEY_REMINDER_TIME] = time }
     }
 }
