@@ -1,4 +1,4 @@
-package com.mtt.jaapmala.main
+package com.mtt.presentation.ui.screens.main
 
 import android.annotation.SuppressLint
 import android.os.Bundle
@@ -8,14 +8,8 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SmallFloatingActionButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -24,7 +18,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -36,10 +29,9 @@ import com.mtt.jaapmala.data.local.db.BackupPrefs
 import com.mtt.jaapmala.data.local.db.DatabaseManager
 import com.mtt.jaapmala.domain.model.ThemeOption
 import com.mtt.jaapmala.domain.repository.SettingsRepository
-import com.mtt.presentation.ui.screens.AddMantraDialog
 import com.mtt.presentation.ui.screens.Screens
 import com.mtt.presentation.ui.screens.history.JaapHistoryScreen
-import com.mtt.presentation.ui.screens.home.HomeScreen
+import com.mtt.presentation.ui.screens.home.AddMantraDialog
 import com.mtt.presentation.ui.screens.home.HomeViewModel
 import com.mtt.presentation.ui.screens.jaap.JaapDetailScreen
 import com.mtt.presentation.ui.screens.jaap.JaapDetailViewModel
@@ -104,19 +96,7 @@ class MainActivity : ComponentActivity() {
                 Scaffold(
                     modifier = Modifier.fillMaxSize(),
                     contentColor = MaterialTheme.colorScheme.background,
-                    floatingActionButton = {
-                        if (currentDestination == Screens.HomeScreen.route) {
-                            SmallFloatingActionButton(
-                                shape = CircleShape,
-                                onClick = {
-                                    navController.navigate(Screens.AddJaapDialog.route)
-                                },
-                                modifier = Modifier.size(72.dp)
-                            ) {
-                                Icon(Icons.Filled.Add, "Add")
-                            }
-                        }
-                    }
+
                 ) { innerPadding ->
                     NavHost(
                         navController = navController,
@@ -132,9 +112,9 @@ class MainActivity : ComponentActivity() {
                             )
                         }
                         composable(Screens.HomeScreen.route) {
-                            HomeScreen(
-                                viewModel,
+                            MainTabsScreen(
                                 navController,
+                                viewModel,
                                 onBackupClick = { backupManager.backupDatabase() },
                                 onRestoreClick = { backupManager.restoreDatabase() },
                                 onExit = {

@@ -1,14 +1,9 @@
 package com.mtt.presentation.ui.screens.jaap
 
-import android.Manifest
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
-import android.media.MediaPlayer
-import android.os.VibrationEffect
-import android.os.Vibrator
-import androidx.annotation.RequiresPermission
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -44,14 +39,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
-import com.mtt.jaapmala.R
 import com.mtt.jaapmala.data.local.entity.JaapEntity
 import com.mtt.jaapmala.util.DateUtils
-import com.mtt.jaapmala.util.UIEvent
+import com.mtt.jaapmala.util.formatIndianNumber
 import com.mtt.presentation.ui.screens.Screens
 import com.mtt.presentation.ui.screens.app_bar.TopAppBarWithMenu
 import com.mtt.presentation.ui.screens.app_bar.TopBarAction
-import kotlinx.coroutines.flow.collectLatest
 
 @Composable
 fun JaapDetailScreen(
@@ -66,16 +59,15 @@ fun JaapDetailScreen(
     val topBarState by viewModel.topBarState.collectAsState()
     val meditationSoundEnabled by viewModel.meditationSoundEnabled.collectAsState()
 
-    LaunchedEffect(jaapId) {
-        viewModel.getMantra(jaapId)
+    LifeCycleAwareSound(viewModel)
+    DisposableEffect(Unit) {
+        onDispose {
+            viewModel.saveHistoryForToday()
+        }
     }
 
-    LaunchedEffect(Unit) {
-        viewModel.uiEvent.collectLatest { event ->
-            when (event) {
-                is UIEvent.TriggerFeedback -> triggerFeedback(context)
-            }
-        }
+    LaunchedEffect(jaapId) {
+        viewModel.getMantra(jaapId)
     }
 
     LaunchedEffect(Unit) {
@@ -141,7 +133,7 @@ fun JaapDetailScreen(
             TopAppBarWithMenu(
                 topBarState,
                 onActionSelected = { viewModel.onTopBarAction(it, context) },
-                onBack = { navController.popBackStack() }
+                onBack = { navController.popBackStack() }, showOverFlowMenu = true
             )
         }) { padding ->
             Column(
@@ -224,7 +216,7 @@ fun StatsSection(mantra: JaapEntity) {
                 fontSize = 16.sp
             )
             Text(
-                "${mantra.todayCount}",
+                formatIndianNumber(mantra.todayCount),
                 color = MaterialTheme.colorScheme.onBackground,
                 fontSize = 20.sp
             )
@@ -236,7 +228,7 @@ fun StatsSection(mantra: JaapEntity) {
                 fontSize = 16.sp
             )
             Text(
-                "${mantra.lifetimeCount}",
+                formatIndianNumber(mantra.lifetimeCount),
                 color = MaterialTheme.colorScheme.onBackground,
                 fontSize = 20.sp
             )
@@ -264,7 +256,7 @@ fun StatsSection(mantra: JaapEntity) {
                 fontSize = 16.sp
             )
             Text(
-                "${mantra.lifetimeMalaCount}",
+                formatIndianNumber(mantra.lifetimeMalaCount),
                 color = MaterialTheme.colorScheme.onBackground,
                 fontSize = 20.sp
             )
@@ -318,24 +310,6 @@ fun JaapDetailScreenPreview() {
         lifetimeMalaCount = 1
     )
     StatsSection(dummy)
-}
-
-@RequiresPermission(Manifest.permission.VIBRATE)
-private fun triggerFeedback(context: Context) {
-    val vibrator = context.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
-    vibrator.vibrate(
-        VibrationEffect.createOneShot(300, VibrationEffect.DEFAULT_AMPLITUDE)
-    )
-
-    playMalaCompletionSound(context)
-}
-
-private fun playMalaCompletionSound(context: Context) {
-    val mediaPlayer = MediaPlayer.create(context, R.raw.bell)
-    mediaPlayer.setOnCompletionListener {
-        it.release() // Always release the player after playback
-    }
-    mediaPlayer.start()
 }
 
 

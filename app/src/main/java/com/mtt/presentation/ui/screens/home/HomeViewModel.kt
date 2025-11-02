@@ -4,22 +4,25 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.mtt.jaapmala.data.local.db.DatabaseManager
 import com.mtt.jaapmala.data.local.entity.JaapEntity
-import com.mtt.jaapmala.data.model.MantraDto
 import com.mtt.jaapmala.domain.usecase.DeleteJaapUseCase
 import com.mtt.jaapmala.domain.usecase.GetMantrasUseCase
 import com.mtt.jaapmala.domain.usecase.InsertMantraUseCase
 import com.mtt.jaapmala.domain.usecase.ResetTodayCountsUseCase
+import com.mtt.jaapmala.domain.usecase.UpdateJaapNameUseCase
 import com.mtt.jaapmala.util.toMantraDto
 import com.mtt.presentation.ui.screens.app_bar.TopBarAction
 import com.mtt.presentation.ui.screens.app_bar.TopBarState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -33,24 +36,37 @@ class HomeViewModel @Inject constructor(
     private val insertMantraUseCase: InsertMantraUseCase,
     private val resetTodayCountUseCase: ResetTodayCountsUseCase,
     private val deleteJaapUseCase: DeleteJaapUseCase,
-    val databaseManager: DatabaseManager
+    val databaseManager: DatabaseManager,
+    private val updateJaapNameUseCase: UpdateJaapNameUseCase
 ) : ViewModel() {
     private val refreshTrigger = MutableStateFlow(Unit)
     private val _showExitDialog = MutableStateFlow(false)
     val showExitDialog: StateFlow<Boolean> = _showExitDialog
 
+    private val _uiState = MutableStateFlow<HomeUIState>(HomeUIState.Loading)
+
     // Expose mantras as StateFlow by collecting from the use case Flow,
     // converting JaapEntities to DTOs
+
     @OptIn(ExperimentalCoroutinesApi::class)
-    val mantras: StateFlow<List<MantraDto>> = refreshTrigger
-        .flatMapLatest { getMantrasUseCase() }
-        .map { list -> list.map { it.toMantraDto() } }
+    val uiState: StateFlow<HomeUIState> = refreshTrigger
+        .flatMapLatest {
+            flow {
+                emit(HomeUIState.Loading)
+                delay(150) // small delay to show shimmer
+                emitAll(getMantrasUseCase().map { list ->
+                    when {
+                        list.isEmpty() -> HomeUIState.Empty
+                        else -> HomeUIState.Success(list.map { it.toMantraDto() })
+                    }
+                })
+            }
+        }
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5000),
-            initialValue = emptyList()
+            initialValue = HomeUIState.Loading
         )
-
     private val _topBarState = MutableStateFlow<TopBarState>(
         TopBarState.HomeTopBar()
     )
@@ -115,5 +131,11 @@ class HomeViewModel @Inject constructor(
 
     fun dismissExitDialog() {
         _showExitDialog.value = false
+    }
+    fun updateMantraName(jaapId: Int, newName: String) {
+        viewModelScope.launch {
+            updateJaapNameUseCase(jaapId, newName)
+            refreshData() // refresh the list after edit
+        }
     }
 }

@@ -54,6 +54,8 @@ class JaapRepositoryImpl @Inject constructor(private val dao: JaapDao) : JaapRep
     override suspend fun deleteJaap(jaap: JaapEntity) {
         dao.deleteJaap(jaap)
     }
-
+    override suspend fun updateJaapName(jaapId: Int, newName: String) {
+        dao.updateJaapName(jaapId, newName)
+    }
 
 }

@@ -11,4 +11,6 @@ interface JaapRepository {
     suspend fun updateJaap(jaapEntity: JaapEntity)
     suspend fun resetTodayCountsIfNeeded()
     suspend fun deleteJaap(jaap: JaapEntity)
+    suspend fun updateJaapName(jaapId: Int, newName: String)
+
 }

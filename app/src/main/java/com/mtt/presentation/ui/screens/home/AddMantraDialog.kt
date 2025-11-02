@@ -1,4 +1,4 @@
-package com.mtt.presentation.ui.screens
+package com.mtt.presentation.ui.screens.home
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column

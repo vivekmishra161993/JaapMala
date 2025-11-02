@@ -14,7 +14,7 @@
         android:supportsRtl="false"
         android:theme="@style/Theme.JaapMala">
         <activity
-            android:name=".main.MainActivity"
+            android:name="com.mtt.presentation.ui.screens.main.MainActivity"
             android:exported="true"
             android:theme="@style/Theme.JaapMala">
             <intent-filter>

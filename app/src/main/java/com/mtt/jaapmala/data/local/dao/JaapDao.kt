@@ -27,4 +27,7 @@ interface JaapDao {
     suspend fun getAllMantrasOnce(): List<JaapEntity>
     @Delete
     suspend fun deleteJaap(jaap: JaapEntity)
+
+    @Query("UPDATE jaaps SET name = :newName WHERE id = :jaapId")
+    suspend fun updateJaapName(jaapId: Int, newName: String)
 }

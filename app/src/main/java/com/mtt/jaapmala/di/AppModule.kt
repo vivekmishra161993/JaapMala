@@ -5,7 +5,7 @@ import android.content.Intent
 import android.net.Uri
 import android.widget.Toast
 import androidx.room.Room
-import com.mtt.jaapmala.data.MeditationSoundManager
+import com.mtt.jaapmala.data.SoundManager
 import com.mtt.jaapmala.data.local.dao.JaapDao
 import com.mtt.jaapmala.data.local.dao.JaapHistoryDao
 import com.mtt.jaapmala.data.local.db.AppRestarter
@@ -162,9 +162,9 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun provideMeditationSoundManager(
+    fun provideSoundManager(
         @ApplicationContext context: Context
-    ): MeditationSoundManager {
-        return MeditationSoundManager(context)
+    ): SoundManager {
+        return SoundManager(context)
     }
 }

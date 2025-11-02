@@ -30,7 +30,8 @@ import androidx.compose.ui.unit.sp
 fun TopAppBarWithMenu(
     topBarState: TopBarState,
     onActionSelected: (TopBarAction) -> Unit,
-    onBack: (() -> Unit)? = null
+    onBack: (() -> Unit)? = null,
+    showOverFlowMenu : Boolean
 ) {
     var expanded by remember { mutableStateOf(false) }
 
@@ -40,8 +41,8 @@ fun TopAppBarWithMenu(
         colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
             containerColor = MaterialTheme.colorScheme.primary,
             titleContentColor = MaterialTheme.colorScheme.onPrimary,
-            navigationIconContentColor = MaterialTheme.colorScheme.surface,
-            actionIconContentColor = MaterialTheme.colorScheme.surface
+            navigationIconContentColor = MaterialTheme.colorScheme.onPrimary,
+            actionIconContentColor = MaterialTheme.colorScheme.onPrimary
         ),
         title = { Text(topBarState.title) },
         navigationIcon = {
@@ -57,12 +58,14 @@ fun TopAppBarWithMenu(
             }
         },
         actions = {
-            IconButton(onClick = { expanded = true }) {
-                Icon(
-                    Icons.Default.MoreVert,
-                    contentDescription = "Menu",
-                    tint = MaterialTheme.colorScheme.onPrimary
-                )
+            if (showOverFlowMenu) {
+                IconButton(onClick = { expanded = true }) {
+                    Icon(
+                        Icons.Default.MoreVert,
+                        contentDescription = "Menu",
+                        tint = MaterialTheme.colorScheme.onPrimary
+                    )
+                }
             }
 
             DropdownMenu(

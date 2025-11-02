@@ -15,8 +15,8 @@ android {
         applicationId = "com.mtt.jaapmala"
         minSdk = 26
         targetSdk = 35
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = 3
+        versionName = "2.0.1"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -62,6 +62,8 @@ dependencies {
     implementation(libs.hilt.core)
     implementation(libs.androidx.hilt.navigation.compose)
     implementation(libs.androidx.material3.android)
+    implementation(libs.material.icon.extended)
+    //implementation(libs.charts)
     ksp(libs.hilt.compiler)
     ksp(libs.androidx.hilt.compiler)
     // Room

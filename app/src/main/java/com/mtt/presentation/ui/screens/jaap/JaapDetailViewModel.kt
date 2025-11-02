@@ -5,7 +5,7 @@ import android.content.Intent
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.mtt.jaapmala.R
-import com.mtt.jaapmala.data.MeditationSoundManager
+import com.mtt.jaapmala.data.SoundManager
 import com.mtt.jaapmala.data.local.entity.JaapEntity
 import com.mtt.jaapmala.data.local.entity.JaapHistoryEntity
 import com.mtt.jaapmala.domain.usecase.GetJaapHistoryUseCase
@@ -14,7 +14,6 @@ import com.mtt.jaapmala.domain.usecase.GetMeditationSoundEnabledUseCase
 import com.mtt.jaapmala.domain.usecase.SaveJaapHistoryUseCase
 import com.mtt.jaapmala.domain.usecase.UpdateJaapManuallyUseCase
 import com.mtt.jaapmala.domain.usecase.UpdateJaapUseCase
-import com.mtt.jaapmala.util.UIEvent
 import com.mtt.presentation.ui.screens.app_bar.TopBarAction
 import com.mtt.presentation.ui.screens.app_bar.TopBarState
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -37,14 +36,11 @@ class JaapDetailViewModel @Inject constructor(
     private val saveJaapHistoryUseCase: SaveJaapHistoryUseCase,
     private val getJaapHistoryUseCase: GetJaapHistoryUseCase,
     private val getMeditationSoundEnabledUseCase: GetMeditationSoundEnabledUseCase,
-    private val meditationSoundManager: MeditationSoundManager
+    private val meditationSoundManager: SoundManager
 ) : ViewModel() {
 
     private val _mantra = MutableStateFlow<JaapEntity?>(null)
     val mantra: StateFlow<JaapEntity?> = _mantra
-
-    private val _uiEvent = MutableSharedFlow<UIEvent>()
-    val uiEvent = _uiEvent.asSharedFlow()
 
     private val _updateStatus = MutableStateFlow<Boolean?>(null)
     val updateStatus = _updateStatus.asStateFlow()
@@ -92,10 +88,8 @@ class JaapDetailViewModel @Inject constructor(
                 newMalaCount += 1
                 newLifetimeMalaCount += 1
                 newSessionMalaCount += 1
-                fadeOutMeditationSound()
-                viewModelScope.launch {
-                    _uiEvent.emit(UIEvent.TriggerFeedback)
-                }
+                //play bell
+                meditationSoundManager.triggerMalaCompletionFeedback(R.raw.bell)
             }
 
             val updated = current.copy(
@@ -117,8 +111,6 @@ class JaapDetailViewModel @Inject constructor(
             }
         }
     }
-
-
     fun decreaseCount() {
         _mantra.value?.let { current ->
             if (current.count > 0) {
@@ -128,9 +120,7 @@ class JaapDetailViewModel @Inject constructor(
                     lifetimeCount = maxOf(current.lifetimeCount - 1, 0),
                     sessionCount = maxOf(current.sessionCount - 1, 0)
                 )
-
                 _mantra.value = updated
-
                 // Save to DB immediately
                 viewModelScope.launch {
                     updateJaapUseCase(updated)
@@ -157,7 +147,6 @@ class JaapDetailViewModel @Inject constructor(
                 else -> {}
             }
         }
-
     }
     fun dismissManualEntryDialog() {
         _showManualEntryDialog.value = false
@@ -190,28 +179,32 @@ class JaapDetailViewModel @Inject constructor(
             Lifetime count: ${_mantra.value?.lifetimeCount}
             Download the app here: $appLink
         """.trimIndent()
-
         val sendIntent = Intent().apply {
             action = Intent.ACTION_SEND
             putExtra(Intent.EXTRA_TEXT, shareText)
             type = "text/plain"
         }
-
         val shareIntent = Intent.createChooser(sendIntent, "Share your Jaap progress")
         context.startActivity(shareIntent)
     }
-    fun startMeditationSound() {
-        if (meditationSoundEnabled.value) {
-            meditationSoundManager.playSound(R.raw.sound)
-        }
+    fun onAppPaused() {
+        meditationSoundManager.onAppBackgrounded()
     }
 
-    fun stopMeditationSound() {
-        meditationSoundManager.stopSound()
+    fun onAppResumed() {
+        meditationSoundManager.onAppForegrounded()
     }
-    private fun fadeOutMeditationSound() {
+
+    override fun onCleared() {
+        super.onCleared()
+        meditationSoundManager.releaseAll()
+    }
+    fun startMeditationSound() {
         if (meditationSoundEnabled.value) {
-            meditationSoundManager.fadeOutAndStop()
+            meditationSoundManager.playMeditationSound(R.raw.sound)
         }
+    }
+    fun stopMeditationSound() {
+        meditationSoundManager.stopMeditationSound()
     }
 }

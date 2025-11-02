@@ -23,6 +23,8 @@ lifecycle-runtime-testing = "2.6.2"
 kotlinx-coroutines = "1.7.3"
 junitJupiter = "5.8.1"
 dataStore ="1.1.0"
+icon_extended = "1.5.0"
+compose_charts="0.2.4"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -46,7 +48,8 @@ room-ktx = { group = "androidx.room", name = "room-ktx", version.ref = "room" }
 room-compiler = { group = "androidx.room", name = "room-compiler", version.ref = "room" }
 androidx-material3-android = { group = "androidx.compose.material3", name = "material3-android", version.ref = "material3Android" }
 dataStore ={group ="androidx.datastore", name="datastore-preferences",version.ref="dataStore"}
-
+material-icon-extended ={group ="androidx.compose.material",name="material-icons-extended",version.ref="icon_extended"}
+charts ={group="io.github.bytebeats",name="compose-charts",version.ref="compose_charts"}
 # Unit Testing
 truth = { module = "com.google.truth:truth", version.ref = "truth" }
 mockk = { module = "io.mockk:mockk", version.ref = "mockk" }

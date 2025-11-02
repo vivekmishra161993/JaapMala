@@ -5,6 +5,7 @@ import android.view.View
 import android.view.WindowInsets
 import android.view.WindowInsetsController
 import androidx.activity.ComponentActivity
+import java.text.DecimalFormat
 
 fun ComponentActivity.enableImmersiveMode() {
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
@@ -33,4 +34,13 @@ fun ComponentActivity.disableImmersiveMode() {
         @Suppress("DEPRECATION")
         window.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_VISIBLE
     }
+}
+
+fun formatIndianNumber(value: Long): String {
+    val formatter = DecimalFormat("##,##,###")
+    return formatter.format(value)
+}
+fun formatIndianNumber(value: Int): String {
+    val formatter = DecimalFormat("##,##,###")
+    return formatter.format(value)
 }
