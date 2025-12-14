@@ -1,27 +1,20 @@
+/*
 package com.mtt.presentation.ui.screens.main
 
 import android.annotation.SuppressLint
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material3.FloatingActionButton
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.mtt.presentation.ui.screens.Screens
-import com.mtt.presentation.ui.screens.app_bar.TopAppBarWithMenu
 import com.mtt.presentation.ui.screens.app_bar.TopBarAction
 import com.mtt.presentation.ui.screens.goals.GoalsScreen
 import com.mtt.presentation.ui.screens.home.HomeScreen
@@ -36,12 +29,13 @@ fun MainTabsScreen(
     viewModel: HomeViewModel,
     onBackupClick: () -> Unit,
     onRestoreClick: () -> Unit,
-    onExit: () -> Unit
+    onExit: () -> Unit,
+    paddingValues: PaddingValues
 ) {
     val tabs = listOf(
         BottomTabItem.Jaaps,
-        BottomTabItem.Progress,
-        BottomTabItem.Goals
+        BottomTabItem.Goals,
+        BottomTabItem.Progress
     )
     val bottomNavController = rememberNavController()
     val currentBackStack by bottomNavController.currentBackStackEntryAsState()
@@ -55,6 +49,7 @@ fun MainTabsScreen(
     val toolbarTitle = when (currentDestination) {
         Screens.HomeScreen.route,
         BottomTabItem.Jaaps.route -> "Jaap Mala"
+
         BottomTabItem.Progress.route -> "Progress"
         BottomTabItem.Goals.route -> "Goals"
         else -> "Jaap Mala"
@@ -73,7 +68,8 @@ fun MainTabsScreen(
             }
         }
     }
-    Scaffold(
+    */
+/*Scaffold(
         topBar = {
             TopAppBarWithMenu(
                 topBarState,
@@ -90,7 +86,7 @@ fun MainTabsScreen(
             })
         },
         floatingActionButton = {
-            if (currentDestination == BottomTabItem.Jaaps.route || currentDestination == BottomTabItem.Goals.route) {
+            if (currentDestination == BottomTabItem.Jaaps.route) {
                 FloatingActionButton(
                     onClick = {
                         parentNavController.navigate(Screens.AddJaapDialog.route)
@@ -103,23 +99,20 @@ fun MainTabsScreen(
 
             }
         }
-    ) { innerPadding ->
+    ) { innerPadding ->*//*
+
         NavHost(
             navController = bottomNavController,
             startDestination = BottomTabItem.Jaaps.route,
-            modifier = Modifier.padding(
-                top = innerPadding.calculateTopPadding(),
-                bottom = innerPadding.calculateBottomPadding(),
-                start = 10.dp,
-                end = 10.dp
-            )
+            modifier = Modifier.padding(paddingValues)
+
         ) {
             composable(BottomTabItem.Jaaps.route) {
                 HomeScreen(
                     viewModel = viewModel,
                     parentNavController,
-
-                    onExit = onExit
+                    onExit = onExit,
+                    paddingValues
                 )
             }
             composable(BottomTabItem.Progress.route) {
@@ -130,4 +123,5 @@ fun MainTabsScreen(
             }
         }
     }
-}
+//}
+*/

@@ -76,6 +76,7 @@ fun JaapDetailScreen(
                 is TopBarAction.History -> {
                     navController.navigate(Screens.JaapHistoryScreen.passJaapId(jaapId))
                 }
+
                 else -> Unit
             }
         }
@@ -133,7 +134,7 @@ fun JaapDetailScreen(
             TopAppBarWithMenu(
                 topBarState,
                 onActionSelected = { viewModel.onTopBarAction(it, context) },
-                onBack = { navController.popBackStack() }, showOverFlowMenu = true
+                onBack = { navController.popBackStack() }, showBackButton = true, showOverFlowMenu = true
             )
         }) { padding ->
             Column(
@@ -162,7 +163,7 @@ fun JaapDetailScreen(
                     modifier = Modifier
                         .align(Alignment.CenterHorizontally)
                         .size(100.dp)
-                ) { Text("Undo") }
+                ) { Text("Undo", fontSize = 16.sp) }
 
                 Spacer(modifier = Modifier.height(24.dp))
 
@@ -266,7 +267,10 @@ fun StatsSection(mantra: JaapEntity) {
 
 @Composable
 fun ProgressCountButton(currentCount: Int, onClick: () -> Unit, malaSize: Int) {
-    val progress = (currentCount % malaSize).toFloat() / malaSize.toFloat()
+    var progress = 0f
+    if (malaSize != 0) {
+        progress = (currentCount % malaSize).toFloat() / malaSize.toFloat()
+    }
 
     Box(
         modifier = Modifier

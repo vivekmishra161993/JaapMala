@@ -6,6 +6,7 @@ import android.net.Uri
 import android.widget.Toast
 import androidx.room.Room
 import com.mtt.jaapmala.data.SoundManager
+import com.mtt.jaapmala.data.local.dao.GoalDao
 import com.mtt.jaapmala.data.local.dao.JaapDao
 import com.mtt.jaapmala.data.local.dao.JaapHistoryDao
 import com.mtt.jaapmala.data.local.db.AppRestarter
@@ -16,14 +17,20 @@ import com.mtt.jaapmala.data.local.db.DatabaseProvider
 import com.mtt.jaapmala.data.local.db.FileHelper
 import com.mtt.jaapmala.data.local.db.JaapDatabase
 import com.mtt.jaapmala.data.local.db.Notifier
+import com.mtt.jaapmala.data.repository.GoalRepositoryImpl
 import com.mtt.jaapmala.data.repository.JaapHistoryRepositoryImpl
 import com.mtt.jaapmala.data.repository.JaapRepositoryImpl
 import com.mtt.jaapmala.data.repository.SettingsRepositoryImpl
+import com.mtt.jaapmala.domain.repository.GoalRepository
 import com.mtt.jaapmala.domain.repository.JaapHistoryRepository
 import com.mtt.jaapmala.domain.repository.JaapRepository
 import com.mtt.jaapmala.domain.repository.SettingsRepository
+import com.mtt.jaapmala.domain.usecase.AddGoalUseCase
+import com.mtt.jaapmala.domain.usecase.DeleteGoalUseCase
+import com.mtt.jaapmala.domain.usecase.GetGoalsUseCase
 import com.mtt.jaapmala.domain.usecase.GetJaapHistoryUseCase
 import com.mtt.jaapmala.domain.usecase.SaveJaapHistoryUseCase
+import com.mtt.jaapmala.domain.usecase.UpdateGoalProgressUseCase
 import com.mtt.jaapmala.util.ReminderScheduler
 import dagger.Module
 import dagger.Provides
@@ -61,8 +68,17 @@ object AppModule {
     }
 
     @Provides
+    fun provideGoalDao(provider: DatabaseProvider): GoalDao {
+        return provider.getDatabase().goalDao()
+    }
+
+    @Provides
     fun provideRepository(dao: JaapDao): JaapRepository {
         return JaapRepositoryImpl(dao)
+    }
+    @Provides
+    fun provideGoalRepository(dao: GoalDao): GoalRepository{
+        return GoalRepositoryImpl(dao)
     }
 
     @Provides
@@ -167,4 +183,25 @@ object AppModule {
     ): SoundManager {
         return SoundManager(context)
     }
+
+    @Provides
+    @Singleton
+    fun provideGetGoalsUseCase(repo: GoalRepository): GetGoalsUseCase =
+        GetGoalsUseCase(repo)
+
+    @Provides
+    @Singleton
+    fun provideAddGoalUseCase(repo: GoalRepository): AddGoalUseCase =
+        AddGoalUseCase(repo)
+
+    @Provides
+    @Singleton
+    fun provideDeleteGoalUseCase(repo: GoalRepository): DeleteGoalUseCase =
+        DeleteGoalUseCase(repo)
+
+    @Provides
+    @Singleton
+    fun provideUpdateGoalProgressUseCase(repo: GoalRepository): UpdateGoalProgressUseCase =
+        UpdateGoalProgressUseCase(repo)
+
 }

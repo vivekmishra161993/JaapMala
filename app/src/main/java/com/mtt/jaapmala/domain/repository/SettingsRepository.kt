@@ -15,9 +15,6 @@ interface SettingsRepository {
     suspend fun setMeditationSound(enabled: Boolean)
     suspend fun setThemeOption(option: ThemeOption)
 
-    suspend fun scheduleDailyReminder(timeInMillis: Long)
-    suspend fun cancelDailyReminder()
-
     suspend fun setDailyReminderEnabled(enabled: Boolean)
     suspend fun setReminderTime(time: String)
 }

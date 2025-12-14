@@ -1,13 +1,10 @@
 package com.mtt.presentation.ui.screens.home
 
 import androidx.activity.compose.BackHandler
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.slideInHorizontally
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -25,16 +22,13 @@ import androidx.compose.material.icons.filled.SelfImprovement
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -51,6 +45,7 @@ fun HomeScreen(
     viewModel: HomeViewModel,
     navController: NavController,
     onExit: () -> Unit,
+    paddingValues: PaddingValues
 ) {
     val showExitDialog by viewModel.showExitDialog.collectAsState()
     val uiState = viewModel.uiState.collectAsState()
@@ -59,75 +54,64 @@ fun HomeScreen(
     BackHandler {
         viewModel.onBackPressed()
     }
-    Scaffold(
+    /*
+        Scaffold { scaffoldPadding ->
+    */
+    Crossfade(
+        targetState = uiState,
+        animationSpec = tween(durationMillis = 500, easing = LinearEasing),
+        label = "Home-crossfade"
+    ) { state ->
+        when (state.value) {
+            is HomeUIState.Loading -> {
+                LoadingPlaceholderView(modifier = Modifier.padding(paddingValues))
+            }
 
-    ) { scaffoldPadding ->
-        Crossfade(
-            targetState = uiState,
-            animationSpec = tween(durationMillis = 500, easing = LinearEasing),
-            label = "Home-crossfade"
-        ) { state ->
-            when (state.value) {
-                is HomeUIState.Loading -> {
-                    LoadingPlaceholderView(modifier = Modifier.padding(scaffoldPadding))
-                }
-                is HomeUIState.Empty -> {
-                    EmptyView(scaffoldPadding)
-                }
-                is HomeUIState.Success -> {
-                    val mantras = (uiState.value as HomeUIState.Success).mantras
-                    MantraList(mantras, navController, viewModel)
-                    // Exit dialog
-                    if (showExitDialog) {
-                        ExitDialog(viewModel, onExit)
-                    }
+            is HomeUIState.Empty -> {
+                EmptyView(paddingValues)
+            }
+
+            is HomeUIState.Success -> {
+                val mantras = (uiState.value as HomeUIState.Success).mantras
+                MantraList(mantras, navController, viewModel,paddingValues)
+                // Exit dialog
+                if (showExitDialog) {
+                    ExitDialog(viewModel, onExit)
                 }
             }
         }
+        // }
 
     }
 }
 
 @Composable
-fun MantraList(mantras: List<MantraDto>, navController: NavController, viewModel: HomeViewModel) {
-    LazyColumn(
-        modifier = Modifier
-            .fillMaxSize()
-    ) {
+fun MantraList(
+    mantras: List<MantraDto>,
+    navController: NavController,
+    viewModel: HomeViewModel,
+    paddingValues: PaddingValues
+) {
+    LazyColumn(modifier = Modifier.padding(paddingValues)) {
         items(mantras, key = { it.id }) { mantra ->
-            // Animate each list item when entering
-            var visible by remember { mutableStateOf(false) }
-            LaunchedEffect(Unit) { visible = true }
-
-            AnimatedVisibility(
-                visible = visible,
-                enter = fadeIn(
-                    animationSpec = tween(
-                        150,
-                        delayMillis = mantra.id * 80
-                    )
-                ) + slideInHorizontally(initialOffsetX = { it / 2 }),
-            ) {
-                MantraListItem(
-                    mantra,
-                    onMantraClick = {
-                        navController.navigate(
-                            Screens.JaapDetailScreen.passJaapId(
-                                mantra.id
-                            )
+            MantraListItem(
+                mantra,
+                onMantraClick = {
+                    navController.navigate(
+                        Screens.JaapDetailScreen.passJaapId(
+                            mantra.id
                         )
-                    },
-                    onDeleteMantra = {
-                        viewModel.deleteJaap(mantra.toJaapEntity())
-                    },
-                    onEditMantra = { newName ->
-                        viewModel.updateMantraName(mantra.id, newName)
-                    },
-                    modifier = Modifier.animateItem()
-                )
-            }
+                    )
+                },
+                onDeleteMantra = {
+                    viewModel.deleteJaap(mantra.toJaapEntity())
+                },
+                onEditMantra = { newName ->
+                    viewModel.updateMantraName(mantra.id, newName)
+                },
+                modifier = Modifier.animateItem()
+            )
         }
-
     }
 }
 

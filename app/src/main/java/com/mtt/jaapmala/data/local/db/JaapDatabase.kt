@@ -4,15 +4,18 @@ import androidx.room.Database
 import androidx.room.RoomDatabase
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
+import com.mtt.jaapmala.data.local.dao.GoalDao
 import com.mtt.jaapmala.data.local.dao.JaapDao
 import com.mtt.jaapmala.data.local.dao.JaapHistoryDao
+import com.mtt.jaapmala.data.local.entity.GoalEntity
 import com.mtt.jaapmala.data.local.entity.JaapEntity
 import com.mtt.jaapmala.data.local.entity.JaapHistoryEntity
 
-@Database(entities = [JaapEntity::class, JaapHistoryEntity::class], version = 3, exportSchema = false)
+@Database(entities = [JaapEntity::class, JaapHistoryEntity::class, GoalEntity::class], version = 4, exportSchema = false)
 abstract class JaapDatabase: RoomDatabase() {
     abstract fun jaapDao():JaapDao
     abstract fun jaapHistoryDao(): JaapHistoryDao
+    abstract fun goalDao() : GoalDao
 }
 val MIGRATION_1_2 = object : Migration(1, 2) {
     override fun migrate(db: SupportSQLiteDatabase) {
@@ -67,6 +70,26 @@ val MIGRATION_2_3 = object : Migration(2, 3) {
 
         // 4. Rename new table
         db.execSQL("ALTER TABLE jaaps_new RENAME TO jaaps")
+    }
+}
+val MIGRATION_3_4 = object : Migration(3, 4) {
+    override fun migrate(database: SupportSQLiteDatabase) {
+        database.execSQL(
+            """
+            CREATE TABLE IF NOT EXISTS goals (
+                id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                jaapId INTEGER NOT NULL,
+                name TEXT NOT NULL,
+                targetMalas INTEGER NOT NULL,
+                currentMalas INTEGER NOT NULL DEFAULT 0,
+                startDate INTEGER,
+                endDate INTEGER,
+                FOREIGN KEY(jaapId) REFERENCES jaaps(id) ON DELETE CASCADE
+                );
+            """.trimIndent()
+        )
+        database.execSQL("CREATE INDEX IF NOT EXISTS index_goals_jaapId ON goals(jaapId)")
+
     }
 }
 

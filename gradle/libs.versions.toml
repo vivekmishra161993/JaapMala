@@ -25,6 +25,8 @@ junitJupiter = "5.8.1"
 dataStore ="1.1.0"
 icon_extended = "1.5.0"
 compose_charts="0.2.4"
+animation ="1.7.0"
+nav_compose ="2.8.0"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -39,6 +41,8 @@ androidx-ui-tooling = { group = "androidx.compose.ui", name = "ui-tooling" }
 androidx-ui-tooling-preview = { group = "androidx.compose.ui", name = "ui-tooling-preview" }
 androidx-ui-test-manifest = { group = "androidx.compose.ui", name = "ui-test-manifest" }
 androidx-ui-test-junit4 = { group = "androidx.compose.ui", name = "ui-test-junit4" }
+navigation_compose ={group ="androidx.navigation",name ="navigation-compose",version.ref ="nav_compose"}
+androidx-compose-animation ={group = "androidx.compose.animation",name ="animation",version.ref ="animation"}
 hilt-core = { group = "com.google.dagger", name = "hilt-android", version.ref = "hilt" }
 hilt-compiler = { group = "com.google.dagger", name = "hilt-compiler", version.ref = "hilt" }
 androidx-hilt-compiler = { group = "androidx.hilt", name = "hilt-compiler", version.ref = "androidx-hilt" }

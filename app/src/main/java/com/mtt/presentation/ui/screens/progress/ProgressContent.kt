@@ -3,6 +3,7 @@ package com.mtt.presentation.ui.screens.progress
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -29,19 +30,20 @@ import androidx.compose.ui.unit.dp
 @Composable
 fun ProgressContent(
     data: ProgressData,
+    paddingValues: PaddingValues
 
 ) {
     Column(
         modifier = Modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
-            .padding(start = 16.dp, end = 16.dp, top = 10.dp)
+            .padding(paddingValues)
     ) {
 
         // --- Summary Card ---
         Card(
             modifier = Modifier
-                .fillMaxWidth(),
+                .fillMaxWidth().padding(start = 10.dp, end = 10.dp),
             shape = RoundedCornerShape(10.dp),
             elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)

@@ -4,6 +4,7 @@ import java.text.SimpleDateFormat
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.time.format.DateTimeParseException
+import java.util.Date
 import java.util.Locale
 
 object DateUtils {
@@ -28,6 +29,17 @@ object DateUtils {
             date?.let { formatter.format(it) } ?: time24
         } catch (e: Exception) {
             time24 // fallback if parsing fails
+        }
+    }
+    fun formatMillisToDate(millis: Long?): String {
+        if (millis == null) return ""
+        return try {
+            val formatter = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
+            formatter.format(Date(millis))
+        } catch (e: Exception) {
+            // In case of an unexpected error, return an empty string
+            // to avoid crashing the UI.
+            ""
         }
     }
 

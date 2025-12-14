@@ -29,6 +29,7 @@ import androidx.compose.ui.unit.sp
 @Composable
 fun TopAppBarWithMenu(
     topBarState: TopBarState,
+    showBackButton:Boolean,
     onActionSelected: (TopBarAction) -> Unit,
     onBack: (() -> Unit)? = null,
     showOverFlowMenu : Boolean
@@ -47,8 +48,10 @@ fun TopAppBarWithMenu(
         title = { Text(topBarState.title) },
         navigationIcon = {
             // Show back button only if onBack is provided
-            if (onBack != null) {
-                IconButton(onClick = { onBack() }) {
+            if (showBackButton) {
+                IconButton(onClick = {
+                    onBack?.invoke()
+                }) {
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                         contentDescription = "Back",
