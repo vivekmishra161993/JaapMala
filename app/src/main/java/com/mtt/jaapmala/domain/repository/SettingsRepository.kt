@@ -7,12 +7,16 @@ import kotlinx.coroutines.flow.Flow
 interface SettingsRepository {
     val reminderOption: Flow<ReminderOption>
     val meditationSoundEnabled: Flow<Boolean>
+    val hapticFeedbackEnabled: Flow<Boolean>
+    val hapticFeedbackFrequency: Flow<Int>
     val themeOption: Flow<ThemeOption>
     // New
     val isDailyReminderEnabled: Flow<Boolean>
     val reminderTime: Flow<String>
     suspend fun setReminderOption(option: ReminderOption)
     suspend fun setMeditationSound(enabled: Boolean)
+    suspend fun setHapticFeedback(enabled: Boolean)
+    suspend fun setHapticFeedbackFrequency(frequency: Int)
     suspend fun setThemeOption(option: ThemeOption)
 
     suspend fun setDailyReminderEnabled(enabled: Boolean)

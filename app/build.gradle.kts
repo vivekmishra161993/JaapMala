@@ -15,8 +15,8 @@ android {
         applicationId = "com.mtt.jaapmala"
         minSdk = 26
         targetSdk = 35
-        versionCode = 3
-        versionName = "2.0.1"
+        versionCode = 9
+        versionName = "2.0.7"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -65,6 +65,7 @@ dependencies {
     implementation(libs.material.icon.extended)
     implementation(libs.androidx.compose.animation)
     implementation(libs.navigation.compose)
+    debugImplementation(libs.ui.tooling)
     //implementation(libs.charts)
     ksp(libs.hilt.compiler)
     ksp(libs.androidx.hilt.compiler)

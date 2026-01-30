@@ -29,11 +29,9 @@ import javax.inject.Singleton
         this.restoreLauncher = restoreLauncher
     }
     fun backupDatabase() {
-
             val formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy_HH-mm-ss")
             val fileName = "jaap_backup_${LocalDateTime.now().format(formatter)}.db"
             backupLauncher?.launch(fileName) // Use the injected launcher
-
     }
 
     fun restoreDatabase() {

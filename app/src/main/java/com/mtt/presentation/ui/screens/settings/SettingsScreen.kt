@@ -14,6 +14,8 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.CenterAlignedTopAppBar
@@ -23,6 +25,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Slider
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
@@ -33,13 +36,16 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.lerp
 import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.mtt.jaapmala.domain.model.ThemeOption
 import com.mtt.jaapmala.util.DateUtils
+import com.mtt.presentation.ui.screens.FontScaledSpacer
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -48,6 +54,8 @@ fun SettingsScreen(
     viewModel: SettingsViewModel = hiltViewModel()
 ) {
     val meditationSoundEnabled by viewModel.meditationSoundEnabled.collectAsState()
+    val hapticFeedbackEnabled by viewModel.hapticFeedbackEnabled.collectAsState()
+    val hapticFeedbackFrequency by viewModel.hapticFeedbackFrequency.collectAsState()
     val themeOption by viewModel.themeOption.collectAsState()
     val isReminderEnabled by viewModel.isDailyReminderEnabled.collectAsState()
     val reminderTime by viewModel.reminderTime.collectAsState()
@@ -93,9 +101,11 @@ fun SettingsScreen(
                 .padding(
                     top = padding.calculateTopPadding(),
                     start = 20.dp,
-                    end = 20.dp
+                    end = 20.dp,
+                    bottom = padding.calculateBottomPadding()
                 )
                 .fillMaxWidth()
+                .verticalScroll(rememberScrollState())
         ) {
             // Daily Reminder Toggle
             Row(
@@ -137,7 +147,7 @@ fun SettingsScreen(
 
             // Reminder Time (only if enabled)
             if (isReminderEnabled) {
-                Spacer(modifier = Modifier.height(8.dp))
+                FontScaledSpacer(startHeight = 8.dp, endHeight = 16.dp)
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier
@@ -171,31 +181,75 @@ fun SettingsScreen(
                 }
             }
 
-            Spacer(modifier = Modifier.height(24.dp))
+            FontScaledSpacer(startHeight = 24.dp, endHeight = 48.dp)
 
             // Meditation Sound Section
             Text(
-                "Meditation Sound",
+                "Sound & Feedback",
                 style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.onBackground
             )
-            Spacer(modifier = Modifier.height(8.dp))
+            FontScaledSpacer(startHeight = 8.dp, endHeight = 16.dp)
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text(
                     "Enable Meditation Sound",
-                    color = MaterialTheme.colorScheme.onBackground
+                    color = MaterialTheme.colorScheme.onBackground,
+                    modifier = Modifier.weight(1f)
                 )
-                Spacer(modifier = Modifier.weight(1f))
                 Switch(
                     checked = meditationSoundEnabled,
                     onCheckedChange = { viewModel.toggleMeditationSound(it) }
                 )
             }
 
-            Spacer(modifier = Modifier.height(24.dp))
+            // Haptic feedback
+            FontScaledSpacer(startHeight = 8.dp, endHeight = 16.dp)
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(
+                    "Haptic Feedback",
+                    color = MaterialTheme.colorScheme.onBackground
+                )
+                Spacer(modifier = Modifier.weight(1f))
+                Switch(
+                    checked = hapticFeedbackEnabled,
+                    onCheckedChange = { viewModel.toggleHapticFeedback(it) }
+                )
+            }
+
+            if (hapticFeedbackEnabled) {
+                val fontScale = LocalDensity.current.fontScale
+                val fraction = ((fontScale - 1f) / 1f).coerceIn(0f, 1f)
+                val spacerHeight = lerp(8.dp, 48.dp, fraction)
+
+                Spacer(modifier = Modifier.height(spacerHeight))
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(
+                        "Vibrate every $hapticFeedbackFrequency jaaps",
+                        color = MaterialTheme.colorScheme.onBackground
+                    )
+                }
+                Slider(
+                    value = hapticFeedbackFrequency.toFloat(),
+                    onValueChange = { viewModel.setHapticFeedbackFrequency(it.toInt()) },
+                    valueRange = 1f..108f,
+                    steps = 107
+                )
+            }
+
+            val fontScale = LocalDensity.current.fontScale
+            val fraction = ((fontScale - 1f) / 1f).coerceIn(0f, 1f)
+            val spacerHeight = lerp(24.dp, 48.dp, fraction)
+
+            Spacer(modifier = Modifier.height(spacerHeight))
 
             // Theme Section
             Text(
@@ -226,4 +280,3 @@ fun SettingsScreen(
         }
     }
 }
-

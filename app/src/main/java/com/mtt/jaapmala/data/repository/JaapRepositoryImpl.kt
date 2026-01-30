@@ -57,5 +57,7 @@ class JaapRepositoryImpl @Inject constructor(private val dao: JaapDao) : JaapRep
     override suspend fun updateJaapName(jaapId: Int, newName: String) {
         dao.updateJaapName(jaapId, newName)
     }
-
+    override suspend fun getById(jaapId: Int): JaapEntity? {
+        return dao.getById(jaapId)
+    }
 }

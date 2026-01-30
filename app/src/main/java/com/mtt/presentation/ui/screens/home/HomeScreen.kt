@@ -31,6 +31,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -38,6 +39,8 @@ import androidx.navigation.NavController
 import com.mtt.jaapmala.data.model.MantraDto
 import com.mtt.jaapmala.util.toJaapEntity
 import com.mtt.presentation.ui.screens.Screens
+import com.mtt.presentation.ui.screens.whats_new.AppVersionProvider
+import com.mtt.presentation.ui.screens.whats_new.WhatsNewDialog
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -49,14 +52,31 @@ fun HomeScreen(
 ) {
     val showExitDialog by viewModel.showExitDialog.collectAsState()
     val uiState = viewModel.uiState.collectAsState()
+    val showDialog by viewModel.showWhatsNew.collectAsState()
+    val changelogItems by viewModel.changelogItems.collectAsState()
+    val context = LocalContext.current
+    val versionName = remember {
+        AppVersionProvider(context).getVersionName()
+    }
 
+    LaunchedEffect(Unit) {
+        viewModel.setHomeScreenActions()
+    }
     // Intercept back press
     BackHandler {
         viewModel.onBackPressed()
     }
-    /*
-        Scaffold { scaffoldPadding ->
-    */
+    // Exit dialog
+    if (showExitDialog) {
+        ExitDialog(viewModel, onExit)
+    }
+    if (showDialog) {
+        WhatsNewDialog(
+            versionName = versionName,
+            items = changelogItems,
+            onDismiss = { viewModel.onWhatsNewDismissed() }
+        )
+    }
     Crossfade(
         targetState = uiState,
         animationSpec = tween(durationMillis = 500, easing = LinearEasing),
@@ -74,14 +94,9 @@ fun HomeScreen(
             is HomeUIState.Success -> {
                 val mantras = (uiState.value as HomeUIState.Success).mantras
                 MantraList(mantras, navController, viewModel,paddingValues)
-                // Exit dialog
-                if (showExitDialog) {
-                    ExitDialog(viewModel, onExit)
-                }
+
             }
         }
-        // }
-
     }
 }
 
@@ -92,7 +107,7 @@ fun MantraList(
     viewModel: HomeViewModel,
     paddingValues: PaddingValues
 ) {
-    LazyColumn(modifier = Modifier.padding(paddingValues)) {
+    LazyColumn(modifier = Modifier.padding(paddingValues).padding(bottom = 16.dp)) {
         items(mantras, key = { it.id }) { mantra ->
             MantraListItem(
                 mantra,

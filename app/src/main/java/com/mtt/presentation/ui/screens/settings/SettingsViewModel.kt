@@ -29,8 +29,21 @@ class SettingsViewModel @Inject constructor(
     val meditationSoundEnabled = repo.meditationSoundEnabled.stateIn(
         viewModelScope,
         SharingStarted.WhileSubscribed(),
+        false
+    )
+
+    val hapticFeedbackEnabled = repo.hapticFeedbackEnabled.stateIn(
+        viewModelScope,
+        SharingStarted.WhileSubscribed(),
         true
     )
+
+    val hapticFeedbackFrequency = repo.hapticFeedbackFrequency.stateIn(
+        viewModelScope,
+        SharingStarted.WhileSubscribed(),
+        1
+    )
+
     val isDailyReminderEnabled = repo.isDailyReminderEnabled.stateIn(
         viewModelScope, SharingStarted.Lazily, false
     )
@@ -45,6 +58,14 @@ class SettingsViewModel @Inject constructor(
 
     fun toggleMeditationSound(enabled: Boolean) {
         viewModelScope.launch { repo.setMeditationSound(enabled) }
+    }
+
+    fun toggleHapticFeedback(enabled: Boolean) {
+        viewModelScope.launch { repo.setHapticFeedback(enabled) }
+    }
+
+    fun setHapticFeedbackFrequency(frequency: Int) {
+        viewModelScope.launch { repo.setHapticFeedbackFrequency(frequency) }
     }
 
     fun updateTheme(option: ThemeOption) {

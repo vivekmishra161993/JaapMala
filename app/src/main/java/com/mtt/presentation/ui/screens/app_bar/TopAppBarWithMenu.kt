@@ -22,6 +22,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
@@ -45,7 +46,7 @@ fun TopAppBarWithMenu(
             navigationIconContentColor = MaterialTheme.colorScheme.onPrimary,
             actionIconContentColor = MaterialTheme.colorScheme.onPrimary
         ),
-        title = { Text(topBarState.title) },
+        title = { Text(topBarState.title, overflow = TextOverflow.Ellipsis, softWrap = false) },
         navigationIcon = {
             // Show back button only if onBack is provided
             if (showBackButton) {
@@ -76,7 +77,7 @@ fun TopAppBarWithMenu(
                 onDismissRequest = { expanded = false },
                 modifier = Modifier.padding(end = 5.dp)
             ) {
-                topBarState.actions.forEach { action ->
+                topBarState.actions?.forEach { action ->
                     DropdownMenuItem(
                         text = {
                             Text(

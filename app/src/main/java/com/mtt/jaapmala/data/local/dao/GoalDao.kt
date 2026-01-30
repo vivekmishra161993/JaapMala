@@ -7,6 +7,8 @@ import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Update
 import com.mtt.jaapmala.data.local.entity.GoalEntity
+import com.mtt.jaapmala.data.local.entity.GoalWithJaapName
+import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface GoalDao {
@@ -16,7 +18,8 @@ interface GoalDao {
 
     // 🔹 Update existing goal progress or details
     @Update
-    suspend fun updateGoal(goal: GoalEntity)
+    suspend fun updateGoal(goal: List<GoalEntity>)
+
 
     // 🔹 Delete a goal
     @Delete
@@ -24,7 +27,7 @@ interface GoalDao {
 
     // 🔹 Fetch all goals
     @Query("SELECT * FROM goals ORDER BY id DESC")
-    suspend fun getAllGoals(): List<GoalEntity>
+    fun getAllGoals(): Flow<List<GoalEntity>>
 
     // 🔹 Fetch a goal by ID
     @Query("SELECT * FROM goals WHERE id = :goalId")
@@ -34,7 +37,17 @@ interface GoalDao {
     @Query("SELECT * FROM goals WHERE jaapId = :jaapId")
     suspend fun getGoalsByJaapId(jaapId: Int): List<GoalEntity>
 
-    // 🔹 Reset daily goals (optional helper)
-    @Query("UPDATE goals SET currentMalas = 0 WHERE endDate IS NULL")
-    suspend fun resetDailyGoals()
+    @Query("SELECT * FROM goals WHERE status = 'ACTIVE'")
+    suspend fun getActiveGoals(): List<GoalEntity>
+
+    @Query("SELECT * FROM goals WHERE jaapId = :jaapId AND status = 'ACTIVE'")
+    suspend fun findActiveGoalByJaapId(jaapId: Int): List<GoalEntity>
+
+    @Query("""
+    SELECT g.*, j.name AS jaapName
+    FROM goals g
+    INNER JOIN jaaps j ON g.jaapId = j.id
+""")
+    fun getGoalsWithJaapName(): Flow<List<GoalWithJaapName>>
+
 }

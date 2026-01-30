@@ -17,10 +17,12 @@ import com.mtt.jaapmala.data.local.db.DatabaseProvider
 import com.mtt.jaapmala.data.local.db.FileHelper
 import com.mtt.jaapmala.data.local.db.JaapDatabase
 import com.mtt.jaapmala.data.local.db.Notifier
+import com.mtt.jaapmala.data.repository.ChangeLogRepoImpl
 import com.mtt.jaapmala.data.repository.GoalRepositoryImpl
 import com.mtt.jaapmala.data.repository.JaapHistoryRepositoryImpl
 import com.mtt.jaapmala.data.repository.JaapRepositoryImpl
 import com.mtt.jaapmala.data.repository.SettingsRepositoryImpl
+import com.mtt.jaapmala.domain.repository.ChangelogRepository
 import com.mtt.jaapmala.domain.repository.GoalRepository
 import com.mtt.jaapmala.domain.repository.JaapHistoryRepository
 import com.mtt.jaapmala.domain.repository.JaapRepository
@@ -77,7 +79,7 @@ object AppModule {
         return JaapRepositoryImpl(dao)
     }
     @Provides
-    fun provideGoalRepository(dao: GoalDao): GoalRepository{
+    fun provideGoalRepository(dao: GoalDao): GoalRepository {
         return GoalRepositoryImpl(dao)
     }
 
@@ -168,6 +170,12 @@ object AppModule {
         @ApplicationContext context: Context
     ): SettingsRepository {
         return SettingsRepositoryImpl(context)
+    }
+
+    @Provides
+    @Singleton
+    fun provideChangeLogRepository(@ApplicationContext context: Context): ChangelogRepository{
+        return ChangeLogRepoImpl(context)
     }
 
     @Provides

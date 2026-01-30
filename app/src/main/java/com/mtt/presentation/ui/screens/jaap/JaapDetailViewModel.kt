@@ -12,10 +12,11 @@ import com.mtt.jaapmala.domain.usecase.GetJaapHistoryUseCase
 import com.mtt.jaapmala.domain.usecase.GetMantraUseCase
 import com.mtt.jaapmala.domain.usecase.GetMeditationSoundEnabledUseCase
 import com.mtt.jaapmala.domain.usecase.SaveJaapHistoryUseCase
+import com.mtt.jaapmala.domain.usecase.ShouldTriggerHapticUseCase
+import com.mtt.jaapmala.domain.usecase.UpdateGoalProgressUseCase
 import com.mtt.jaapmala.domain.usecase.UpdateJaapManuallyUseCase
 import com.mtt.jaapmala.domain.usecase.UpdateJaapUseCase
 import com.mtt.presentation.ui.screens.app_bar.TopBarAction
-import com.mtt.presentation.ui.screens.app_bar.TopBarState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -23,6 +24,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.time.LocalDate
@@ -36,22 +38,21 @@ class JaapDetailViewModel @Inject constructor(
     private val saveJaapHistoryUseCase: SaveJaapHistoryUseCase,
     private val getJaapHistoryUseCase: GetJaapHistoryUseCase,
     private val getMeditationSoundEnabledUseCase: GetMeditationSoundEnabledUseCase,
-    private val meditationSoundManager: SoundManager
+    private val meditationSoundManager: SoundManager,
+    private val updateGoalProgressUseCase: UpdateGoalProgressUseCase,
+    private val shouldTriggerHapticUseCase: ShouldTriggerHapticUseCase
 ) : ViewModel() {
 
     private val _mantra = MutableStateFlow<JaapEntity?>(null)
     val mantra: StateFlow<JaapEntity?> = _mantra
 
+    private val _uiEvent = MutableSharedFlow<JaapUIEvent>()
+    val uiEvent = _uiEvent.asSharedFlow()
     private val _updateStatus = MutableStateFlow<Boolean?>(null)
     val updateStatus = _updateStatus.asStateFlow()
 
     private val _showManualEntryDialog = MutableStateFlow(false)
     val showManualEntryDialog: StateFlow<Boolean> = _showManualEntryDialog
-
-    private val _topBarState = MutableStateFlow<TopBarState>(
-        TopBarState.DetailTopBar("")
-    )
-    val topBarState: StateFlow<TopBarState> = _topBarState
 
     private val _history = MutableStateFlow<List<JaapHistoryEntity>>(emptyList())
     val history: StateFlow<List<JaapHistoryEntity>> = _history
@@ -60,6 +61,8 @@ class JaapDetailViewModel @Inject constructor(
     val topBarEvent = _topBarEvent.asSharedFlow()
     val meditationSoundEnabled = getMeditationSoundEnabledUseCase()
         .stateIn(viewModelScope, SharingStarted.Lazily, false)
+
+
 
     fun getMantra(id: Int) {
         viewModelScope.launch {
@@ -70,8 +73,6 @@ class JaapDetailViewModel @Inject constructor(
                     sessionCount = entity.sessionCount.takeIf { it >= 0 } ?: 0,
                     sessionMalaCount = entity.sessionMalaCount.takeIf { it >= 0 } ?: 0
                 )
-                _topBarState.value = TopBarState.DetailTopBar(_mantra.value?.name!!)
-
             }
         }
     }
@@ -83,6 +84,13 @@ class JaapDetailViewModel @Inject constructor(
             var newLifetimeMalaCount = current.lifetimeMalaCount
             var newSessionMalaCount = current.sessionMalaCount
 
+            viewModelScope.launch {
+                shouldTriggerHapticUseCase
+                    .shouldTrigger(newCount)
+                    .first()
+                    .takeIf { it }
+                    ?.let { _uiEvent.emit(JaapUIEvent.TriggerHaptic) }
+            }
             if (newCount % current.malaSize == 0) {
                 newCount = 0
                 newMalaCount += 1
@@ -90,6 +98,9 @@ class JaapDetailViewModel @Inject constructor(
                 newSessionMalaCount += 1
                 //play bell
                 meditationSoundManager.triggerMalaCompletionFeedback(R.raw.bell)
+                viewModelScope.launch {
+                   updateGoalProgressUseCase(current.id,  malaIncrement = 1)
+                }
             }
 
             val updated = current.copy(
@@ -100,15 +111,14 @@ class JaapDetailViewModel @Inject constructor(
                 todayMalaCount = newMalaCount,
                 lifetimeMalaCount = newLifetimeMalaCount,
                 sessionMalaCount = newSessionMalaCount,
-
             )
-
             _mantra.value = updated
 
             // Save to DB immediately
             viewModelScope.launch {
                 updateJaapUseCase(updated)
             }
+
         }
     }
     fun decreaseCount() {
@@ -132,6 +142,8 @@ class JaapDetailViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 updateJaapManuallyUseCase.invoke(jaapId, addedCount)
+                updateGoalProgressUseCase.invoke(jaapId,  malaIncrement = (addedCount/_mantra.value!!.malaSize))
+
                 _updateStatus.value = true
             } catch (e: Exception) {
                 _updateStatus.value = false

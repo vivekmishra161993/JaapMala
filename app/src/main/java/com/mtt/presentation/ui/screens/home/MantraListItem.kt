@@ -28,10 +28,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.mtt.jaapmala.data.model.MantraDto
 import com.mtt.jaapmala.util.formatIndianNumber
 
@@ -57,47 +55,47 @@ fun MantraListItem(
             onDismiss = { showDeleteDialog = false }
         )
     }
-    if (showEditDialog){
-        EditMantraDialog(currentName = mantraDto.name, onDismiss = {
-            showEditDialog = false
-        }, onSubmit = {newName->
-            onEditMantra(newName)
-            showEditDialog = false
-        })
+
+    if (showEditDialog) {
+        EditMantraDialog(
+            currentName = mantraDto.name,
+            onDismiss = { showEditDialog = false },
+            onSubmit = { newName ->
+                onEditMantra(newName)
+                showEditDialog = false
+            }
+        )
     }
 
     Card(
         modifier = modifier
-            .padding(horizontal = 16.dp, vertical = 5.dp)
+            .padding(horizontal = 16.dp, vertical = 8.dp)
             .combinedClickable(
                 onClick = onMantraClick,
                 onLongClick = { showDeleteDialog = true }
             ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 10.dp),
-        shape = RoundedCornerShape(10.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+        elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
     ) {
-        Column(modifier = Modifier.padding(10.dp)) {
+        Column(modifier = Modifier.padding(12.dp)) {
 
-            // Title Row with mantra name + edit icon
+            // ---------- Title Row ----------
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.Top
             ) {
                 Text(
                     text = mantraDto.name,
-                    fontSize = 22.sp,
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurface,
-                    modifier = Modifier.weight(1f),
-                    maxLines = 1,
-
+                    modifier = Modifier.weight(1f)
                 )
+
                 Spacer(modifier = Modifier.width(8.dp))
-                IconButton(onClick = {
-                    showEditDialog = true
-                }) {
+
+                IconButton(onClick = { showEditDialog = true }) {
                     Icon(
                         imageVector = Icons.Default.Edit,
                         contentDescription = "Edit Mantra",
@@ -108,97 +106,79 @@ fun MantraListItem(
 
             Spacer(modifier = Modifier.height(10.dp))
 
-            // Stats Row (Today Count and Mala Count)
+            // ---------- Today Stats ----------
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Column(
-                    modifier = Modifier.weight(0.5f),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Text(
-                        text = "Today",
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = MaterialTheme.colorScheme.onBackground
-                    )
-                    Text(
-                        text = formatIndianNumber(mantraDto.todayCount),
-                        fontWeight = FontWeight.ExtraBold,
-                        fontSize = 28.sp,
-                        modifier = Modifier.padding(top = 4.dp),
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                }
+                StatsColumn(
+                    title = "Today",
+                    value = formatIndianNumber(mantraDto.todayCount),
+                    modifier = Modifier.weight(1f)
+                )
 
-                Column(
-                    modifier = Modifier.weight(0.5f),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Text(
-                        text = "${mantraDto.malaSize} x",
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = MaterialTheme.colorScheme.onBackground
-                    )
-                    Text(
-                        text = formatIndianNumber(mantraDto.malaCount),
-                        fontWeight = FontWeight.ExtraBold,
-                        fontSize = 28.sp,
-                        modifier = Modifier.padding(top = 4.dp),
-                        textAlign = TextAlign.Center,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                }
+                StatsColumn(
+                    title = "${mantraDto.malaSize}×",
+                    value = formatIndianNumber(mantraDto.malaCount),
+                    modifier = Modifier.weight(1f)
+                )
             }
 
             Spacer(modifier = Modifier.height(10.dp))
 
-            // Lifetime Stats Row
+            // ---------- Total Stats (Short Labels) ----------
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Column(
-                    modifier = Modifier.weight(0.5f),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Text(
-                        text = "Lifetime",
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = MaterialTheme.colorScheme.onBackground
-                    )
-                    Text(
-                        text = formatIndianNumber(mantraDto.lifetimeCount),
-                        fontSize = 16.sp,
-                        modifier = Modifier.padding(top = 4.dp),
-                        color = MaterialTheme.colorScheme.onBackground
-                    )
-                }
+                StatsColumn(
+                    title = "Total",
+                    value = formatIndianNumber(mantraDto.lifetimeCount),
+                    modifier = Modifier.weight(1f)
+                )
 
-                Column(
-                    modifier = Modifier.weight(0.5f),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Text(
-                        text = "Lifetime ${mantraDto.malaSize} x",
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = MaterialTheme.colorScheme.onBackground
-                    )
-                    Text(
-                        text = formatIndianNumber(mantraDto.lifetimeMalaCount),
-                        fontSize = 16.sp,
-                        modifier = Modifier.padding(top = 4.dp),
-                        color = MaterialTheme.colorScheme.onBackground
-                    )
-                }
+                StatsColumn(
+                    title = "Total ${mantraDto.malaSize}×",
+                    value = formatIndianNumber(mantraDto.lifetimeMalaCount),
+                    modifier = Modifier.weight(1f)
+                )
             }
         }
     }
 }
+
+@Composable
+private fun StatsColumn(
+    title: String,
+    value: String,
+    modifier: Modifier
+) {
+    Column(
+        modifier = modifier,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(
+            text = title,
+            style = MaterialTheme.typography.labelLarge,
+            fontWeight = FontWeight.SemiBold,
+            maxLines = 1,
+            softWrap = false,
+            color = MaterialTheme.colorScheme.onBackground
+        )
+
+        Text(
+            text = value,
+            style = MaterialTheme.typography.headlineSmall,
+            fontWeight = FontWeight.ExtraBold,
+            modifier = Modifier.padding(top = 4.dp),
+            maxLines = 1,
+            softWrap = false,
+            color = MaterialTheme.colorScheme.onSurface
+        )
+    }
+}
+
+
 
 
 

@@ -11,7 +11,7 @@ import com.mtt.jaapmala.data.local.entity.GoalEntity
 import com.mtt.jaapmala.data.local.entity.JaapEntity
 import com.mtt.jaapmala.data.local.entity.JaapHistoryEntity
 
-@Database(entities = [JaapEntity::class, JaapHistoryEntity::class, GoalEntity::class], version = 4, exportSchema = false)
+@Database(entities = [JaapEntity::class, JaapHistoryEntity::class, GoalEntity::class], version = 6, exportSchema = true)
 abstract class JaapDatabase: RoomDatabase() {
     abstract fun jaapDao():JaapDao
     abstract fun jaapHistoryDao(): JaapHistoryDao
@@ -36,7 +36,8 @@ val MIGRATION_1_2 = object : Migration(1, 2) {
 val MIGRATION_2_3 = object : Migration(2, 3) {
     override fun migrate(db: SupportSQLiteDatabase) {
         // 1. Create new table with full schema
-        db.execSQL("""
+        db.execSQL(
+            """
             CREATE TABLE IF NOT EXISTS jaaps_new (
                 id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
                 name TEXT NOT NULL,
@@ -50,10 +51,12 @@ val MIGRATION_2_3 = object : Migration(2, 3) {
                 sessionMalaCount INTEGER NOT NULL DEFAULT 0,
                 malaSize INTEGER NOT NULL DEFAULT 108
             )
-        """.trimIndent())
+        """.trimIndent()
+        )
 
         // 2. Copy old data, converting Int → Long for lifetime fields and setting default 0 for new columns
-        db.execSQL("""
+        db.execSQL(
+            """
             INSERT INTO jaaps_new (
                 id, name, date, count, todayCount, todayMalaCount,
                 lifetimeCount, lifetimeMalaCount, sessionCount, sessionMalaCount, malaSize
@@ -63,7 +66,8 @@ val MIGRATION_2_3 = object : Migration(2, 3) {
                 lifetimeCount AS lifetimeCount, lifetimeMalaCount AS lifetimeMalaCount,
                 0 AS sessionCount, 0 AS sessionMalaCount, malaSize
             FROM jaaps
-        """.trimIndent())
+        """.trimIndent()
+        )
 
         // 3. Drop old table
         db.execSQL("DROP TABLE jaaps")
@@ -73,23 +77,115 @@ val MIGRATION_2_3 = object : Migration(2, 3) {
     }
 }
 val MIGRATION_3_4 = object : Migration(3, 4) {
-    override fun migrate(database: SupportSQLiteDatabase) {
-        database.execSQL(
+    override fun migrate(db: SupportSQLiteDatabase) {
+
+        db.execSQL(
             """
             CREATE TABLE IF NOT EXISTS goals (
                 id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
                 jaapId INTEGER NOT NULL,
+                jaapName TEXT NOT NULL,
                 name TEXT NOT NULL,
                 targetMalas INTEGER NOT NULL,
                 currentMalas INTEGER NOT NULL DEFAULT 0,
                 startDate INTEGER,
                 endDate INTEGER,
+                status TEXT NOT NULL DEFAULT 'ACTIVE',
                 FOREIGN KEY(jaapId) REFERENCES jaaps(id) ON DELETE CASCADE
-                );
+            )
             """.trimIndent()
         )
-        database.execSQL("CREATE INDEX IF NOT EXISTS index_goals_jaapId ON goals(jaapId)")
 
+        db.execSQL(
+            "CREATE INDEX IF NOT EXISTS index_goals_jaapId ON goals(jaapId)"
+        )
     }
 }
+val MIGRATION_4_5 = object : Migration(4, 5) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+
+        // 1. Create correct table
+        db.execSQL(
+            """
+            CREATE TABLE goals_new (
+                id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                jaapId INTEGER NOT NULL,
+                name TEXT NOT NULL,
+                targetMalas INTEGER NOT NULL,
+                currentMalas INTEGER NOT NULL,
+                startDate INTEGER,
+                endDate INTEGER,
+                jaapName TEXT,
+                status TEXT NOT NULL,
+                FOREIGN KEY(jaapId) REFERENCES jaaps(id) ON DELETE CASCADE
+            )
+            """.trimIndent()
+        )
+
+        // 2. Copy existing data
+        db.execSQL(
+            """
+            INSERT INTO goals_new (
+                id, jaapId, name, targetMalas, currentMalas,
+                startDate, endDate, jaapName, status
+            )
+            SELECT
+                id, jaapId, name, targetMalas, currentMalas,
+                startDate, endDate, jaapName, status
+            FROM goals
+            """.trimIndent()
+        )
+
+        // 3. Replace table
+        db.execSQL("DROP TABLE goals")
+        db.execSQL("ALTER TABLE goals_new RENAME TO goals")
+
+        // 4. Recreate index
+        db.execSQL(
+            "CREATE INDEX IF NOT EXISTS index_goals_jaapId ON goals(jaapId)"
+        )
+    }
+}
+val MIGRATION_GOAL_REMOVE_JAAP_NAME_5_6 = object : Migration(
+    startVersion = 5,
+    endVersion = 6
+) {
+    override fun migrate(database: SupportSQLiteDatabase) {
+
+        // 1️⃣ Create new table
+        database.execSQL("""
+            CREATE TABLE goals_new (
+                id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                jaapId INTEGER NOT NULL,
+                name TEXT NOT NULL,
+                targetMalas INTEGER NOT NULL,
+                currentMalas INTEGER NOT NULL,
+                startDate INTEGER,
+                endDate INTEGER,
+                status TEXT NOT NULL,
+                FOREIGN KEY(jaapId) REFERENCES jaaps(id) ON DELETE CASCADE
+            )
+        """)
+
+        // 2️⃣ Copy data (ignore jaapName)
+        database.execSQL("""
+            INSERT INTO goals_new (
+                id, jaapId, name, targetMalas, currentMalas, startDate, endDate, status
+            )
+            SELECT 
+                id, jaapId, name, targetMalas, currentMalas, startDate, endDate, status
+            FROM goals
+        """)
+
+        // 3️⃣ Drop old table
+        database.execSQL("DROP TABLE goals")
+
+        // 4️⃣ Rename
+        database.execSQL("ALTER TABLE goals_new RENAME TO goals")
+
+        // 5️⃣ Recreate index
+        database.execSQL("CREATE INDEX index_goals_jaapId ON goals(jaapId)")
+    }
+}
+
 

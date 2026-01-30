@@ -4,11 +4,16 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.os.Build
+import android.os.VibrationEffect
+import android.os.Vibrator
+import android.os.VibratorManager
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -16,10 +21,10 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -33,6 +38,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -42,34 +48,74 @@ import androidx.navigation.NavController
 import com.mtt.jaapmala.data.local.entity.JaapEntity
 import com.mtt.jaapmala.util.DateUtils
 import com.mtt.jaapmala.util.formatIndianNumber
+import com.mtt.presentation.ui.screens.FontScaledSpacer
 import com.mtt.presentation.ui.screens.Screens
-import com.mtt.presentation.ui.screens.app_bar.TopAppBarWithMenu
 import com.mtt.presentation.ui.screens.app_bar.TopBarAction
+import com.mtt.presentation.ui.screens.home.HomeViewModel
 
 @Composable
 fun JaapDetailScreen(
     jaapId: Int,
     navController: NavController,
     setTitle: (String) -> Unit,
+    padding: PaddingValues,
+    homeViewModel: HomeViewModel
 ) {
     val viewModel: JaapDetailViewModel = hiltViewModel()
     val context = LocalContext.current
     val mantra by viewModel.mantra.collectAsState()
     val showDialog by viewModel.showManualEntryDialog.collectAsState()
-    val topBarState by viewModel.topBarState.collectAsState()
     val meditationSoundEnabled by viewModel.meditationSoundEnabled.collectAsState()
-
+    val vibrator = remember {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            val manager = context.getSystemService(
+                Context.VIBRATOR_MANAGER_SERVICE
+            ) as VibratorManager
+            manager.defaultVibrator
+        } else {
+            @Suppress("DEPRECATION")
+            context.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
+        }
+    }
     LifeCycleAwareSound(viewModel)
     DisposableEffect(Unit) {
         onDispose {
             viewModel.saveHistoryForToday()
         }
     }
-
+    LaunchedEffect(Unit) {
+        homeViewModel.setTopBarActions(
+            listOf(
+                TopBarAction.IncrementCount,
+                TopBarAction.History,
+                TopBarAction.Share
+            )
+        )
+    }
     LaunchedEffect(jaapId) {
         viewModel.getMantra(jaapId)
     }
-
+    LaunchedEffect(viewModel) {
+        homeViewModel.registerCustomActionHandler { action, ctx ->
+            viewModel.onTopBarAction(action, ctx)
+        }
+    }
+    LaunchedEffect(Unit) {
+        viewModel.uiEvent.collect {event ->
+            when (event) {
+                JaapUIEvent.TriggerHaptic -> {
+                    if (vibrator.hasVibrator()) {
+                        vibrator.vibrate(
+                            VibrationEffect.createOneShot(
+                                30L,
+                                VibrationEffect.DEFAULT_AMPLITUDE
+                            )
+                        )
+                    }
+                }
+            }
+        }
+    }
     LaunchedEffect(Unit) {
         viewModel.topBarEvent.collect { action ->
             when (action) {
@@ -102,7 +148,11 @@ fun JaapDetailScreen(
             }
         }
     }
-
+    DisposableEffect(Unit) {
+        onDispose {
+            homeViewModel.setHomeScreenActions()
+        }
+    }
     DisposableEffect(Unit) {
         val filter = IntentFilter().apply {
             addAction(Intent.ACTION_SCREEN_OFF)
@@ -114,6 +164,12 @@ fun JaapDetailScreen(
         onDispose {
             context.unregisterReceiver(screenReceiver)
             viewModel.stopMeditationSound()
+        }
+    }
+    DisposableEffect(Unit) {
+        onDispose {
+            homeViewModel.setHomeScreenActions()
+            homeViewModel.unregisterCustomActionHandler()
         }
     }
 
@@ -130,61 +186,65 @@ fun JaapDetailScreen(
 
     mantra?.let { detail ->
         setTitle(detail.name)
-        Scaffold(topBar = {
-            TopAppBarWithMenu(
-                topBarState,
-                onActionSelected = { viewModel.onTopBarAction(it, context) },
-                onBack = { navController.popBackStack() }, showBackButton = true, showOverFlowMenu = true
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(
+                    start = 16.dp,
+                    bottom = padding.calculateBottomPadding(),
+                    end = 16.dp,
+                    top = padding.calculateTopPadding() + 20.dp
+                )
+        ) {
+            Text(
+                text = "Date: ${DateUtils.formatDate(detail.date)}",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onBackground,
+                modifier = Modifier.align(Alignment.CenterHorizontally)
             )
-        }) { padding ->
-            Column(
+
+            FontScaledSpacer(startHeight = 24.dp, endHeight = 32.dp)
+            StatsSection(detail)
+            Spacer(modifier = Modifier.height(36.dp))
+
+            val fontScale = LocalDensity.current.fontScale
+            val buttonSize = (100 * fontScale).dp.coerceIn(100.dp, 140.dp)
+
+            Button(
+                onClick = { viewModel.decreaseCount() },
+                shape = CircleShape,
                 modifier = Modifier
-                    .fillMaxSize()
-                    .padding(
-                        start = 16.dp,
-                        bottom = padding.calculateBottomPadding(),
-                        end = 16.dp,
-                        top = padding.calculateTopPadding() + 20.dp
-                    )
+                    .align(Alignment.CenterHorizontally)
+                    .size(buttonSize)
             ) {
                 Text(
-                    text = "Date: ${DateUtils.formatDate(detail.date)}",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onBackground,
-                    modifier = Modifier.align(Alignment.CenterHorizontally)
+                    text = "Undo",
+                    maxLines = 1,
+                    softWrap = false
                 )
+            }
 
-                Spacer(modifier = Modifier.height(24.dp))
-                StatsSection(detail)
-                Spacer(modifier = Modifier.height(36.dp))
 
-                Button(
-                    onClick = { viewModel.decreaseCount() },
-                    modifier = Modifier
-                        .align(Alignment.CenterHorizontally)
-                        .size(100.dp)
-                ) { Text("Undo", fontSize = 16.sp) }
+            Spacer(modifier = Modifier.height(24.dp))
 
-                Spacer(modifier = Modifier.height(24.dp))
-
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .weight(1f)
-                        .clickable(
-                            interactionSource = remember { MutableInteractionSource() },
-                            indication = null
-                        ) { viewModel.increaseCount() },
-                    contentAlignment = Alignment.Center
-                ) {
-                    ProgressCountButton(
-                        currentCount = detail.count,
-                        onClick = { viewModel.increaseCount() },
-                        malaSize = detail.malaSize
-                    )
-                }
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f)
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null
+                    ) { viewModel.increaseCount() },
+                contentAlignment = Alignment.Center
+            ) {
+                ProgressCountButton(
+                    currentCount = detail.count,
+                    onClick = { viewModel.increaseCount()},
+                    malaSize = detail.malaSize
+                )
             }
         }
+
     } ?: run {
         Box(
             modifier = Modifier
