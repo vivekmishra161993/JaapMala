@@ -11,6 +11,7 @@ import com.mtt.jaapmala.domain.usecase.GetMantrasUseCase
 import com.mtt.jaapmala.domain.usecase.InsertMantraUseCase
 import com.mtt.jaapmala.domain.usecase.ResetTodayCountsUseCase
 import com.mtt.jaapmala.domain.usecase.UpdateJaapNameUseCase
+import com.mtt.jaapmala.util.DateUtils
 import com.mtt.jaapmala.util.toMantraDto
 import com.mtt.presentation.ui.screens.app_bar.TopBarAction
 import com.mtt.presentation.ui.screens.app_bar.TopBarState
@@ -32,8 +33,6 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import java.time.LocalDate
-import java.time.format.DateTimeFormatter
 import javax.inject.Inject
 
 @HiltViewModel
@@ -115,16 +114,12 @@ class HomeViewModel @Inject constructor(
 
     fun addMantra(name: String, size: Int) {
         viewModelScope.launch {
-            insertMantraUseCase(name, getTodayDate(), size)
+            insertMantraUseCase(name, DateUtils.getTodayDate(), size)
             // No need to update _mantras manually; Flow emits updates
         }
     }
 
-    private fun getTodayDate(): String {
-        val today = LocalDate.now()
-        val formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy")
-        return today.format(formatter)
-    }
+
 
     fun deleteJaap(jaap: JaapEntity) {
         viewModelScope.launch {

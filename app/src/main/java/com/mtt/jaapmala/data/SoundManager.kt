@@ -98,6 +98,7 @@ class SoundManager(
         val uri = "android.resource://${context.packageName}/$resId".toUri()
         MediaPlayer().apply {
             setAudioAttributes(bellAttrs)
+
             setDataSource(context, uri)
             setOnCompletionListener { it.release() }
             prepare()

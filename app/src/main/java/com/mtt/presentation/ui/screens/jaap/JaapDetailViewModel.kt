@@ -8,6 +8,7 @@ import com.mtt.jaapmala.R
 import com.mtt.jaapmala.data.SoundManager
 import com.mtt.jaapmala.data.local.entity.JaapEntity
 import com.mtt.jaapmala.data.local.entity.JaapHistoryEntity
+import com.mtt.jaapmala.domain.usecase.EnsureTodayUseCase
 import com.mtt.jaapmala.domain.usecase.GetJaapHistoryUseCase
 import com.mtt.jaapmala.domain.usecase.GetMantraUseCase
 import com.mtt.jaapmala.domain.usecase.GetMeditationSoundEnabledUseCase
@@ -40,7 +41,8 @@ class JaapDetailViewModel @Inject constructor(
     private val getMeditationSoundEnabledUseCase: GetMeditationSoundEnabledUseCase,
     private val meditationSoundManager: SoundManager,
     private val updateGoalProgressUseCase: UpdateGoalProgressUseCase,
-    private val shouldTriggerHapticUseCase: ShouldTriggerHapticUseCase
+    private val shouldTriggerHapticUseCase: ShouldTriggerHapticUseCase,
+    private val ensureTodayUseCase: EnsureTodayUseCase
 ) : ViewModel() {
 
     private val _mantra = MutableStateFlow<JaapEntity?>(null)
@@ -79,65 +81,76 @@ class JaapDetailViewModel @Inject constructor(
 
     fun increaseCount() {
         _mantra.value?.let { current ->
-            var newCount = current.count + 1
-            var newMalaCount = current.todayMalaCount
-            var newLifetimeMalaCount = current.lifetimeMalaCount
-            var newSessionMalaCount = current.sessionMalaCount
 
             viewModelScope.launch {
+
+                val safeCurrent = ensureTodayUseCase(current)
+
+                var newCount = safeCurrent.count + 1
+                var newMalaCount = safeCurrent.todayMalaCount
+                var newLifetimeMalaCount = safeCurrent.lifetimeMalaCount
+                var newSessionMalaCount = safeCurrent.sessionMalaCount
+
                 shouldTriggerHapticUseCase
                     .shouldTrigger(newCount)
                     .first()
                     .takeIf { it }
                     ?.let { _uiEvent.emit(JaapUIEvent.TriggerHaptic) }
-            }
-            if (newCount % current.malaSize == 0) {
-                newCount = 0
-                newMalaCount += 1
-                newLifetimeMalaCount += 1
-                newSessionMalaCount += 1
-                //play bell
-                meditationSoundManager.triggerMalaCompletionFeedback(R.raw.bell)
-                viewModelScope.launch {
-                   updateGoalProgressUseCase(current.id,  malaIncrement = 1)
+
+                if (newCount % safeCurrent.malaSize == 0) {
+                    newCount = 0
+                    newMalaCount += 1
+                    newLifetimeMalaCount += 1
+                    newSessionMalaCount += 1
+
+                    meditationSoundManager.triggerMalaCompletionFeedback(R.raw.bell)
+
+                    updateGoalProgressUseCase(
+                        safeCurrent.id,
+                        malaIncrement = 1
+                    )
                 }
-            }
 
-            val updated = current.copy(
-                count = newCount,
-                todayCount = current.todayCount + 1,
-                lifetimeCount = current.lifetimeCount + 1,
-                sessionCount = current.sessionCount + 1,
-                todayMalaCount = newMalaCount,
-                lifetimeMalaCount = newLifetimeMalaCount,
-                sessionMalaCount = newSessionMalaCount,
-            )
-            _mantra.value = updated
+                val updated = safeCurrent.copy(
+                    count = newCount,
+                    todayCount = safeCurrent.todayCount + 1,
+                    lifetimeCount = safeCurrent.lifetimeCount + 1,
+                    sessionCount = safeCurrent.sessionCount + 1,
+                    todayMalaCount = newMalaCount,
+                    lifetimeMalaCount = newLifetimeMalaCount,
+                    sessionMalaCount = newSessionMalaCount
+                )
 
-            // Save to DB immediately
-            viewModelScope.launch {
+                _mantra.value = updated
                 updateJaapUseCase(updated)
             }
-
         }
     }
+
+
     fun decreaseCount() {
         _mantra.value?.let { current ->
-            if (current.count > 0) {
-                val updated = current.copy(
-                    count = current.count - 1,
-                    todayCount = maxOf(current.todayCount - 1, 0),
-                    lifetimeCount = maxOf(current.lifetimeCount - 1, 0),
-                    sessionCount = maxOf(current.sessionCount - 1, 0)
-                )
-                _mantra.value = updated
-                // Save to DB immediately
-                viewModelScope.launch {
+
+            viewModelScope.launch {
+
+                val safeCurrent = ensureTodayUseCase(current)
+
+                if (safeCurrent.count > 0) {
+                    val updated = safeCurrent.copy(
+                        count = safeCurrent.count - 1,
+                        todayCount = maxOf(safeCurrent.todayCount - 1, 0),
+                        lifetimeCount = maxOf(safeCurrent.lifetimeCount - 1, 0),
+                        sessionCount = maxOf(safeCurrent.sessionCount - 1, 0)
+                    )
+
+                    _mantra.value = updated
                     updateJaapUseCase(updated)
                 }
             }
         }
     }
+
+
     fun updateJaapCountManually(jaapId: Int, addedCount: Int) {
         viewModelScope.launch {
             try {

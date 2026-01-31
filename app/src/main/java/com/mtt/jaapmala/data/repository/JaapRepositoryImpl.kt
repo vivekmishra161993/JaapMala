@@ -4,9 +4,9 @@ import com.mtt.jaapmala.data.local.dao.JaapDao
 import com.mtt.jaapmala.data.local.entity.JaapEntity
 import com.mtt.jaapmala.data.model.MantraDto
 import com.mtt.jaapmala.domain.repository.JaapRepository
+import com.mtt.jaapmala.util.DateUtils
 import com.mtt.jaapmala.util.toMantraDto
 import kotlinx.coroutines.flow.Flow
-import java.time.LocalDate
 import javax.inject.Inject
 
 class JaapRepositoryImpl @Inject constructor(private val dao: JaapDao) : JaapRepository {
@@ -39,17 +39,28 @@ class JaapRepositoryImpl @Inject constructor(private val dao: JaapDao) : JaapRep
     }
 
     override suspend fun resetTodayCountsIfNeeded() {
-        val today = LocalDate.now().toString() // Get today's date in string format
-        val jaaps = dao.getAllMantrasOnce() // Fetch all mantras from the database
-        jaaps.forEach { jaap ->
-            // Only reset if the stored date is not today
-            if (jaap.date != today) {
-                // If it's a different day, reset todayCount and todayMalaCount, and update the date
-                val updated = jaap.copy(todayCount = 0, todayMalaCount = 0, date = today)
-                dao.updateJaap(updated) // Update the entity in the database
-            }
+        val jaaps = dao.getAllMantrasOnce()
+        jaaps.forEach {
+            ensureToday(it)
         }
+    }
 
+    override suspend fun ensureToday(entity: JaapEntity): JaapEntity {
+        val today = DateUtils.getTodayDate()
+
+        return if (entity.date != today) {
+            val updated = entity.copy(
+                todayCount = 0,
+                todayMalaCount = 0,
+                sessionCount = 0,
+                sessionMalaCount = 0,
+                date = today
+            )
+            dao.updateJaap(updated)
+            updated
+        } else {
+            entity
+        }
     }
     override suspend fun deleteJaap(jaap: JaapEntity) {
         dao.deleteJaap(jaap)
