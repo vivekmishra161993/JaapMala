@@ -9,15 +9,20 @@ import com.mtt.jaapmala.data.SoundManager
 import com.mtt.jaapmala.data.local.entity.JaapEntity
 import com.mtt.jaapmala.data.local.entity.JaapHistoryEntity
 import com.mtt.jaapmala.domain.usecase.EnsureTodayUseCase
+import com.mtt.jaapmala.domain.usecase.GetHapticFeedbackUseCase
+import com.mtt.jaapmala.domain.usecase.GetHapticFrequencyUseCase
 import com.mtt.jaapmala.domain.usecase.GetJaapHistoryUseCase
 import com.mtt.jaapmala.domain.usecase.GetMantraUseCase
 import com.mtt.jaapmala.domain.usecase.GetMeditationSoundEnabledUseCase
+import com.mtt.jaapmala.domain.usecase.GetSoundModeUseCase
 import com.mtt.jaapmala.domain.usecase.SaveJaapHistoryUseCase
 import com.mtt.jaapmala.domain.usecase.ShouldTriggerHapticUseCase
 import com.mtt.jaapmala.domain.usecase.UpdateGoalProgressUseCase
 import com.mtt.jaapmala.domain.usecase.UpdateJaapManuallyUseCase
 import com.mtt.jaapmala.domain.usecase.UpdateJaapUseCase
+import com.mtt.jaapmala.util.JaapSoundManager
 import com.mtt.presentation.ui.screens.app_bar.TopBarAction
+import com.mtt.presentation.ui.screens.settings.SoundMode
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -42,9 +47,12 @@ class JaapDetailViewModel @Inject constructor(
     private val meditationSoundManager: SoundManager,
     private val updateGoalProgressUseCase: UpdateGoalProgressUseCase,
     private val shouldTriggerHapticUseCase: ShouldTriggerHapticUseCase,
-    private val ensureTodayUseCase: EnsureTodayUseCase
+    private val ensureTodayUseCase: EnsureTodayUseCase,
+    private val getSoundModeUseCase: GetSoundModeUseCase,
+    private val jaapSoundManager: JaapSoundManager,
+    private val getHapticFrequencyUseCase: GetHapticFrequencyUseCase,
+    private val getHapticFeedbackUseCase: GetHapticFeedbackUseCase
 ) : ViewModel() {
-
     private val _mantra = MutableStateFlow<JaapEntity?>(null)
     val mantra: StateFlow<JaapEntity?> = _mantra
 
@@ -63,9 +71,23 @@ class JaapDetailViewModel @Inject constructor(
     val topBarEvent = _topBarEvent.asSharedFlow()
     val meditationSoundEnabled = getMeditationSoundEnabledUseCase()
         .stateIn(viewModelScope, SharingStarted.Lazily, false)
+    private var currentSoundMode: SoundMode = SoundMode.MALA_COMPLETION
+    var hapticFeedbackEnabled: Boolean = false
 
+    val hapticFrequency = getHapticFrequencyUseCase()
+        .stateIn(
+            viewModelScope,
+            SharingStarted.WhileSubscribed(5000),
+            1
+        )
 
+    init {
+        viewModelScope.launch {
+            currentSoundMode = getSoundModeUseCase().first()
+            hapticFeedbackEnabled = getHapticFeedbackUseCase().first()
 
+        }
+    }
     fun getMantra(id: Int) {
         viewModelScope.launch {
             getMantraUseCase(id).collect { entity ->
@@ -86,30 +108,46 @@ class JaapDetailViewModel @Inject constructor(
 
                 val safeCurrent = ensureTodayUseCase(current)
 
-                var newCount = safeCurrent.count + 1
+                val nextCount = safeCurrent.count + 1
+                val isMalaCompleted =
+                    nextCount % safeCurrent.malaSize == 0
+
+                var newCount = nextCount
                 var newMalaCount = safeCurrent.todayMalaCount
                 var newLifetimeMalaCount = safeCurrent.lifetimeMalaCount
                 var newSessionMalaCount = safeCurrent.sessionMalaCount
 
-                shouldTriggerHapticUseCase
-                    .shouldTrigger(newCount)
-                    .first()
-                    .takeIf { it }
-                    ?.let { _uiEvent.emit(JaapUIEvent.TriggerHaptic) }
+                // -------------------------
+                // HAPTIC (NO FLOW COLLECTION)
+                // -------------------------
+                if (hapticFeedbackEnabled) {
+                    val frequency = hapticFrequency.value
 
-                if (newCount % safeCurrent.malaSize == 0) {
+                    if (frequency > 0 && nextCount % frequency == 0) {
+                        _uiEvent.emit(JaapUIEvent.TriggerHaptic)
+                    }
+                }
+
+                // -------------------------
+                // MALA COMPLETION LOGIC
+                // -------------------------
+                if (isMalaCompleted) {
+
                     newCount = 0
                     newMalaCount += 1
                     newLifetimeMalaCount += 1
                     newSessionMalaCount += 1
-
-                    meditationSoundManager.triggerMalaCompletionFeedback(R.raw.bell)
 
                     updateGoalProgressUseCase(
                         safeCurrent.id,
                         malaIncrement = 1
                     )
                 }
+
+                // -------------------------
+                // SOUND HANDLING
+                // -------------------------
+                handleSound(isMalaCompleted)
 
                 val updated = safeCurrent.copy(
                     count = newCount,
@@ -232,4 +270,26 @@ class JaapDetailViewModel @Inject constructor(
     fun stopMeditationSound() {
         meditationSoundManager.stopMeditationSound()
     }
+    private fun handleSound(isMalaCompleted: Boolean) {
+
+        when (currentSoundMode) {
+
+            SoundMode.OFF -> { }
+
+            SoundMode.EVERY_COUNT -> {
+                jaapSoundManager.playJaapTick()
+                if (isMalaCompleted) {
+                    jaapSoundManager.playMalaBell()
+                }
+            }
+
+            SoundMode.MALA_COMPLETION -> {
+                if (isMalaCompleted) {
+                    jaapSoundManager.playMalaBell()
+                }
+            }
+        }
+        }
+
+
 }

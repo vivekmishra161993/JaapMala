@@ -2,6 +2,7 @@ package com.mtt.jaapmala.domain.repository
 
 import com.mtt.jaapmala.domain.model.ReminderOption
 import com.mtt.jaapmala.domain.model.ThemeOption
+import com.mtt.presentation.ui.screens.settings.SoundMode
 import kotlinx.coroutines.flow.Flow
 
 interface SettingsRepository {
@@ -13,6 +14,7 @@ interface SettingsRepository {
     // New
     val isDailyReminderEnabled: Flow<Boolean>
     val reminderTime: Flow<String>
+    val soundMode :Flow<SoundMode>
     suspend fun setReminderOption(option: ReminderOption)
     suspend fun setMeditationSound(enabled: Boolean)
     suspend fun setHapticFeedback(enabled: Boolean)
@@ -21,4 +23,7 @@ interface SettingsRepository {
 
     suspend fun setDailyReminderEnabled(enabled: Boolean)
     suspend fun setReminderTime(time: String)
+    suspend fun setSoundMode(mode: SoundMode)
+
 }
+

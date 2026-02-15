@@ -8,9 +8,11 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.mtt.jaapmala.data.repository.SettingsRepositoryImpl.PreferencesKeys.KEY_REMINDER_ENABLED
 import com.mtt.jaapmala.data.repository.SettingsRepositoryImpl.PreferencesKeys.KEY_REMINDER_TIME
+import com.mtt.jaapmala.data.repository.SettingsRepositoryImpl.PreferencesKeys.SOUND_MODE_KEY
 import com.mtt.jaapmala.domain.model.ReminderOption
 import com.mtt.jaapmala.domain.model.ThemeOption
 import com.mtt.jaapmala.domain.repository.SettingsRepository
+import com.mtt.presentation.ui.screens.settings.SoundMode
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -21,7 +23,7 @@ val Context.dataStore by preferencesDataStore("user_preferences")
 
 @Singleton
 class SettingsRepositoryImpl @Inject constructor(
-   @ApplicationContext private val context: Context
+    @ApplicationContext private val context: Context
 ) : SettingsRepository {
 
     private object PreferencesKeys {
@@ -32,6 +34,8 @@ class SettingsRepositoryImpl @Inject constructor(
         val THEME_OPTION = stringPreferencesKey("theme_option")
         val KEY_REMINDER_ENABLED = booleanPreferencesKey("daily_reminder_enabled")
         val KEY_REMINDER_TIME = stringPreferencesKey("daily_reminder_time")
+        val SOUND_MODE_KEY = stringPreferencesKey("sound_mode")
+
     }
 
     override val themeOption: Flow<ThemeOption> = context.dataStore.data
@@ -39,10 +43,10 @@ class SettingsRepositoryImpl @Inject constructor(
             val value = prefs[PreferencesKeys.THEME_OPTION]
             ThemeOption.entries.find { it.name == value } ?: ThemeOption.SYSTEM
         }
-    override val isDailyReminderEnabled: Flow<Boolean>
-        = context.dataStore.data.map { prefs -> prefs[KEY_REMINDER_ENABLED] ?: false }
-    override val reminderTime: Flow<String>
-        = context.dataStore.data.map { prefs -> prefs[KEY_REMINDER_TIME] ?: "20:00" }
+    override val isDailyReminderEnabled: Flow<Boolean> =
+        context.dataStore.data.map { prefs -> prefs[KEY_REMINDER_ENABLED] ?: false }
+    override val reminderTime: Flow<String> =
+        context.dataStore.data.map { prefs -> prefs[KEY_REMINDER_TIME] ?: "20:00" }
 
     override val reminderOption: Flow<ReminderOption> = context.dataStore.data
         .map { prefs ->
@@ -63,6 +67,13 @@ class SettingsRepositoryImpl @Inject constructor(
     override val hapticFeedbackFrequency: Flow<Int> = context.dataStore.data
         .map { prefs ->
             prefs[PreferencesKeys.HAPTIC_FEEDBACK_FREQUENCY] ?: 1
+        }
+    override val soundMode: Flow<SoundMode> =
+        context.dataStore.data.map { prefs ->
+            SoundMode.valueOf(
+                prefs[SOUND_MODE_KEY] ?: SoundMode.MALA_COMPLETION.name
+            )
+
         }
 
     override suspend fun setReminderOption(option: ReminderOption) {
@@ -94,6 +105,7 @@ class SettingsRepositoryImpl @Inject constructor(
             prefs[PreferencesKeys.THEME_OPTION] = option.name
         }
     }
+
     override suspend fun setDailyReminderEnabled(enabled: Boolean) {
         context.dataStore.edit { it[KEY_REMINDER_ENABLED] = enabled }
     }
@@ -101,4 +113,11 @@ class SettingsRepositoryImpl @Inject constructor(
     override suspend fun setReminderTime(time: String) {
         context.dataStore.edit { it[KEY_REMINDER_TIME] = time }
     }
+
+    override suspend fun setSoundMode(mode: SoundMode) {
+        context.dataStore.edit { prefs ->
+            prefs[SOUND_MODE_KEY] = mode.name
+        }
+    }
+
 }

@@ -68,7 +68,7 @@ fun SettingsScreen(
             Toast.makeText(context, "Notifications disabled", Toast.LENGTH_SHORT).show()
             // reset reminder if permission not granted
             viewModel.toggleDailyReminder(false)
-        }else{
+        } else {
             viewModel.toggleDailyReminder(true)
         }
     }
@@ -204,6 +204,18 @@ fun SettingsScreen(
                     onCheckedChange = { viewModel.toggleMeditationSound(it) }
                 )
             }
+            //Sound
+            FontScaledSpacer(startHeight = 8.dp, endHeight = 16.dp)
+            Text(
+                "Sound Feedback",
+                color = MaterialTheme.colorScheme.onBackground
+            )
+            FontScaledSpacer(startHeight = 8.dp, endHeight = 16.dp)
+
+            SoundModeSettingsItem(
+                viewModel.soundMode.collectAsState().value,
+                viewModel::updateSoundMode
+            )
 
             // Haptic feedback
             FontScaledSpacer(startHeight = 8.dp, endHeight = 16.dp)

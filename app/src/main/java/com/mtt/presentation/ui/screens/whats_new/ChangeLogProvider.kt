@@ -4,6 +4,10 @@ object ChangeLogProvider {
 
     fun getChangesFor(versionCode: Int): List<String> {
         return when (versionCode) {
+            10-> listOf(
+                "Configurable Sound Option while counting",
+                "Minor bug fixes and performance improvements"
+            )
             9 -> listOf(
                 "Better UI support for large font sizes",
                 "Improved goal and jaap card readability",

@@ -29,10 +29,23 @@ import com.mtt.jaapmala.domain.repository.JaapRepository
 import com.mtt.jaapmala.domain.repository.SettingsRepository
 import com.mtt.jaapmala.domain.usecase.AddGoalUseCase
 import com.mtt.jaapmala.domain.usecase.DeleteGoalUseCase
+import com.mtt.jaapmala.domain.usecase.GetDailyReminderEnabledUseCase
 import com.mtt.jaapmala.domain.usecase.GetGoalsUseCase
+import com.mtt.jaapmala.domain.usecase.GetHapticFeedbackUseCase
+import com.mtt.jaapmala.domain.usecase.GetHapticFrequencyUseCase
 import com.mtt.jaapmala.domain.usecase.GetJaapHistoryUseCase
+import com.mtt.jaapmala.domain.usecase.GetMeditationSoundUseCase
+import com.mtt.jaapmala.domain.usecase.GetReminderTimeUseCase
+import com.mtt.jaapmala.domain.usecase.GetThemeOptionUseCase
 import com.mtt.jaapmala.domain.usecase.SaveJaapHistoryUseCase
+import com.mtt.jaapmala.domain.usecase.SetDailyReminderEnabledUseCase
+import com.mtt.jaapmala.domain.usecase.SetHapticFeedbackUseCase
+import com.mtt.jaapmala.domain.usecase.SetHapticFrequencyUseCase
+import com.mtt.jaapmala.domain.usecase.SetMeditationSoundUseCase
+import com.mtt.jaapmala.domain.usecase.SetReminderTimeUseCase
+import com.mtt.jaapmala.domain.usecase.SetThemeOptionUseCase
 import com.mtt.jaapmala.domain.usecase.UpdateGoalProgressUseCase
+import com.mtt.jaapmala.util.JaapSoundManager
 import com.mtt.jaapmala.util.ReminderScheduler
 import dagger.Module
 import dagger.Provides
@@ -78,6 +91,7 @@ object AppModule {
     fun provideRepository(dao: JaapDao): JaapRepository {
         return JaapRepositoryImpl(dao)
     }
+
     @Provides
     fun provideGoalRepository(dao: GoalDao): GoalRepository {
         return GoalRepositoryImpl(dao)
@@ -174,7 +188,7 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun provideChangeLogRepository(@ApplicationContext context: Context): ChangelogRepository{
+    fun provideChangeLogRepository(@ApplicationContext context: Context): ChangelogRepository {
         return ChangeLogRepoImpl(context)
     }
 
@@ -212,4 +226,77 @@ object AppModule {
     fun provideUpdateGoalProgressUseCase(repo: GoalRepository): UpdateGoalProgressUseCase =
         UpdateGoalProgressUseCase(repo)
 
+    // Theme
+    @Provides
+    fun provideGetThemeOptionUseCase(
+        repo: SettingsRepository
+    ) = GetThemeOptionUseCase(repo)
+
+    @Provides
+    fun provideSetThemeOptionUseCase(
+        repo: SettingsRepository
+    ) = SetThemeOptionUseCase(repo)
+
+    // Meditation Sound
+    @Provides
+    fun provideGetMeditationSoundUseCase(
+        repo: SettingsRepository
+    ) = GetMeditationSoundUseCase(repo)
+
+    @Provides
+    fun provideSetMeditationSoundUseCase(
+        repo: SettingsRepository
+    ) = SetMeditationSoundUseCase(repo)
+
+    // Haptic Feedback
+    @Provides
+    fun provideGetHapticFeedbackUseCase(
+        repo: SettingsRepository
+    ) = GetHapticFeedbackUseCase(repo)
+
+    @Provides
+    fun provideSetHapticFeedbackUseCase(
+        repo: SettingsRepository
+    ) = SetHapticFeedbackUseCase(repo)
+
+    // Haptic Frequency
+    @Provides
+    fun provideGetHapticFrequencyUseCase(
+        repo: SettingsRepository
+    ) = GetHapticFrequencyUseCase(repo)
+
+    @Provides
+    fun provideSetHapticFrequencyUseCase(
+        repo: SettingsRepository
+    ) = SetHapticFrequencyUseCase(repo)
+
+    // Daily Reminder
+    @Provides
+    fun provideGetDailyReminderEnabledUseCase(
+        repo: SettingsRepository
+    ) = GetDailyReminderEnabledUseCase(repo)
+
+    @Provides
+    fun provideSetDailyReminderEnabledUseCase(
+        repo: SettingsRepository
+    ) = SetDailyReminderEnabledUseCase(repo)
+
+    // Reminder Time
+    @Provides
+    fun provideGetReminderTimeUseCase(
+        repo: SettingsRepository
+    ) = GetReminderTimeUseCase(repo)
+
+    @Provides
+    fun provideSetReminderTimeUseCase(
+        repo: SettingsRepository
+    ) = SetReminderTimeUseCase(repo)
+
+    @Provides
+    @Singleton
+    fun provideJaapSoundManager(
+        @ApplicationContext context: Context
+    ): JaapSoundManager {
+        return JaapSoundManager(context)
+    }
 }
