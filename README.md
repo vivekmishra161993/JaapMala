@@ -1,32 +1,44 @@
-# Jaap Mala – Android Architecture Showcase
+# Jaap Mala – Android Clean Architecture
 
 ## Overview
-A production-grade Android application designed to demonstrate scalable architecture, offline-first design, and modern Android development practices for spiritual practice tracking.
+Jaap Mala is a production-grade Android application designed to help users track mantra chanting (Jaap) with customizable mala sizes and daily tracking.
+
+This project demonstrates **modern Android development practices**, focusing on scalable architecture, offline-first design, and clean state management.
+
+---
 
 ## Tech Stack
-- **Kotlin**: Primary programming language.
-- **Jetpack Compose**: Declarative UI toolkit for modern, native layouts.
-- **Hilt (Dependency Injection)**: Industry-standard DI for better testability and decoupled components.
-- **Coroutines + Flow**: Efficient asynchronous programming and reactive data streams.
-- **Room Database**: Robust local data persistence following offline-first principles.
-- **DataStore**: Modern, type-safe alternative to SharedPreferences for user settings.
 
-## Architecture
-- **Clean Architecture**: Strictly separated into Domain, Data, and Presentation layers to ensure high maintainability.
-- **MVVM Pattern**: Facilitates a clear separation between UI logic and business logic.
-- **Reactive UI**: Implements Unidirectional Data Flow (UDF) using Compose and StateFlow.
+- **Language:** Kotlin  
+- **UI:** Jetpack Compose  
+- **Architecture:** Clean Architecture + MVVM  
+- **Dependency Injection:** Hilt  
+- **Async:** Coroutines + Flow  
+- **Data Layer:** Room Database (offline-first)  
+- **State Management:** ViewModel + Flow  
+- **Build Tools:** Gradle  
 
-## Key Features
-- **Customizable Mala Size**: Flexibility to define bead counts for different spiritual practices.
-- **Daily Reset Logic**: Intelligent tracking of daily progress and mala completions.
-- **Offline-first Design**: Reliable performance without internet dependency via local SQLite persistence.
-- **Haptic & Audio Feedback**: Configurable vibration and sound settings for an immersive chanting experience.
+---
 
-## Engineering Decisions
-- **Why Clean Architecture?**: To achieve a high degree of testability and allow the business logic (Domain) to remain independent of UI or Database frameworks.
-- **Why Hilt?**: To standardize dependency injection across the project, leveraging Hilt's seamless integration with ViewModels and the Android lifecycle.
-- **State Management**: Utilizing `StateFlow` to provide a robust, lifecycle-aware stream of UI states, ensuring the UI always reflects the current data state.
-  <img src="screenshots/home.png" width="30%" />
+## Key Engineering Decisions
+
+- **Clean Architecture**  
+  Adopted to ensure scalability, separation of concerns, and testability  
+
+- **Hilt for Dependency Injection**  
+  Reduces boilerplate and improves maintainability across modules  
+
+- **Room Database**  
+  Enables offline-first capability with fast local data access  
+
+- **ViewModel + Flow**  
+  Provides reactive and lifecycle-aware state management  
+
+- **Multi-Module Structure**  
+  Improves code organization and supports large-scale development
+
+---
+
 ## Screenshots
 <img width="30%" alt="Screenshot_20250927-175426" src="https://github.com/user-attachments/assets/43c8a75d-f04b-4821-b401-7f26e7b05f54" />
 <img width="30%" alt="Screenshot_20250927-175437" src="https://github.com/user-attachments/assets/e26d398b-7830-4007-9d14-7257fc59dd99" />
@@ -34,3 +46,11 @@ A production-grade Android application designed to demonstrate scalable architec
 <img width="30%" alt="Screenshot_20250927-175454" src="https://github.com/user-attachments/assets/c32db8ab-b512-4c16-8536-e1fd143510fd" />
 <img width="30%" alt="Screenshot_20250927-175418" src="https://github.com/user-attachments/assets/d01fa3fc-4a0c-41cc-91d2-d5c7c5741bc0" />
 
+---
+
+## Links
+
+- **GitHub Repository:** https://github.com/vivekmishra161993/JaapMala  
+- **Play Store Link:** https://play.google.com/store/apps/details?id=com.mtt.jaapmala
+
+---
