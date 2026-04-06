@@ -26,6 +26,11 @@ A production-grade Android application designed to demonstrate scalable architec
 - **Why Clean Architecture?**: To achieve a high degree of testability and allow the business logic (Domain) to remain independent of UI or Database frameworks.
 - **Why Hilt?**: To standardize dependency injection across the project, leveraging Hilt's seamless integration with ViewModels and the Android lifecycle.
 - **State Management**: Utilizing `StateFlow` to provide a robust, lifecycle-aware stream of UI states, ensuring the UI always reflects the current data state.
-
+  <img src="screenshots/home.png" width="30%" />
 ## Screenshots
-*(Images to be added)*
+<img width="30%" alt="Screenshot_20250927-175426" src="https://github.com/user-attachments/assets/43c8a75d-f04b-4821-b401-7f26e7b05f54" />
+<img width="30%" alt="Screenshot_20250927-175437" src="https://github.com/user-attachments/assets/e26d398b-7830-4007-9d14-7257fc59dd99" />
+<img width="30%" alt="Screenshot_20250927-175446" src="https://github.com/user-attachments/assets/6f411cf0-5f8f-47cd-8b02-c50bafddb00f" />
+<img width="30%" alt="Screenshot_20250927-175454" src="https://github.com/user-attachments/assets/c32db8ab-b512-4c16-8536-e1fd143510fd" />
+<img width="30%" alt="Screenshot_20250927-175418" src="https://github.com/user-attachments/assets/d01fa3fc-4a0c-41cc-91d2-d5c7c5741bc0" />
+
