@@ -58,7 +58,7 @@ class HomeViewModel @Inject constructor(
     private val _changelogItems = MutableStateFlow<List<String>>(emptyList())
     val changelogItems: StateFlow<List<String>> = _changelogItems
 
-    private var currentVersionCode = 8
+    private var currentVersionCode = 10
 
     // Expose mantras as StateFlow by collecting from the use case Flow,
     // converting JaapEntities to DTOs

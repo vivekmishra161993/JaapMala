@@ -1,5 +1,6 @@
 package com.mtt.presentation.ui.screens.settings
 
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -17,6 +18,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.mtt.presentation.ui.screens.FontScaledSpacer
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun SoundModeOption(
     title: String,
@@ -36,7 +38,7 @@ fun SoundModeOption(
         FontScaledSpacer(startHeight = 8.dp, endHeight = 16.dp)
         Column(modifier = Modifier.weight(1f)){
             Text(text = title, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium)
-            Text(text = subtitle, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.surfaceVariant)
+            Text(text = subtitle, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface)
 
         }
     }
