@@ -4,7 +4,6 @@ import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.mtt.jaapmala.data.local.db.DatabaseManager
-import com.mtt.jaapmala.data.local.entity.JaapEntity
 import com.mtt.jaapmala.domain.repository.ChangelogRepository
 import com.mtt.jaapmala.domain.usecase.DeleteJaapUseCase
 import com.mtt.jaapmala.domain.usecase.GetMantrasUseCase
@@ -23,14 +22,13 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -45,54 +43,128 @@ class HomeViewModel @Inject constructor(
     private val updateJaapNameUseCase: UpdateJaapNameUseCase,
     @ApplicationContext private val context: Context,
     private val changelogRepository: ChangelogRepository,
-    ) : ViewModel() {
+) : ViewModel() {
     private val refreshTrigger = MutableStateFlow(Unit)
-    private val _showExitDialog = MutableStateFlow(false)
-    val showExitDialog: StateFlow<Boolean> = _showExitDialog
 
-    private val _uiState = MutableStateFlow<HomeUIState>(HomeUIState.Loading)
-    private  var customActionHandler: ((TopBarAction, Context) -> Unit)? = null
-    private val _showWhatsNew = MutableStateFlow(false)
-    val showWhatsNew: StateFlow<Boolean> = _showWhatsNew
-
-    private val _changelogItems = MutableStateFlow<List<String>>(emptyList())
-    val changelogItems: StateFlow<List<String>> = _changelogItems
-
-    private var currentVersionCode = 10
-
-    // Expose mantras as StateFlow by collecting from the use case Flow,
-    // converting JaapEntities to DTOs
-    @OptIn(ExperimentalCoroutinesApi::class)
-    val uiState: StateFlow<HomeUIState> = refreshTrigger
-        .flatMapLatest {
-            flow {
-                emit(HomeUIState.Loading)
-                delay(150) // small delay to show shimmer
-                emitAll(getMantrasUseCase().map { list ->
-                    when {
-                        list.isEmpty() -> HomeUIState.Empty
-                        else -> HomeUIState.Success(list.map { it.toMantraDto() })
-                    }
-                })
-            }
-        }
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000),
-            initialValue = HomeUIState.Loading
+    private val _state = MutableStateFlow(
+        HomeState(
+            topBarState = TopBarState("JaapMala"),
+            mantraList = HomeUIState.Loading
         )
-    private val _topBarState = MutableStateFlow(
-        TopBarState("JaapMala")
     )
-    val topBarState: StateFlow<TopBarState> = _topBarState
+    private val _effect = MutableSharedFlow<HomeEffect>()
+    val state = _state.asStateFlow()
+    val effect: SharedFlow<HomeEffect> = _effect.asSharedFlow()
+    private var currentVersionCode = 10
+    private var customActionHandler: ((TopBarAction, Context) -> Unit)? = null
 
-    // One-time UI events
-    private val _topBarEvent = MutableSharedFlow<TopBarAction>()
-    val topBarEvent = _topBarEvent.asSharedFlow()
 
     init {
+        observeMantras()
         resetDailyCount()
         checkForWhatsNew()
+    }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    private fun observeMantras() {
+        viewModelScope.launch {
+            refreshTrigger.flatMapLatest {
+                flow {
+                    emit(HomeUIState.Loading)
+                    delay(150)
+                    emitAll(getMantrasUseCase().map { list ->
+                        when {
+                            list.isEmpty() -> HomeUIState.Empty
+                            else -> HomeUIState.Success(list.map { it.toMantraDto() })
+                        }
+
+                    })
+                }
+            }.collect { newListState ->
+                _state.update { it.copy(mantraList = newListState) }
+            }
+        }
+    }
+
+    fun onIntent(intent: HomeIntent) {
+        when (intent) {
+            is HomeIntent.AddMantra -> {
+                viewModelScope.launch {
+                    insertMantraUseCase(intent.name, DateUtils.getTodayDate(), intent.size)
+                }
+            }
+
+            is HomeIntent.DeleteMantra -> {
+                viewModelScope.launch {
+                    deleteJaapUseCase(intent.jaap)
+                }
+            }
+
+            is HomeIntent.UpdateMantraName -> {
+                viewModelScope.launch {
+                    updateJaapNameUseCase(intent.jaapId, intent.newName)
+                    refreshData()
+                }
+            }
+
+            is HomeIntent.RefreshData -> {
+                refreshData()
+            }
+
+            is HomeIntent.OnTopBarAction -> {
+                handleTopBarAction(intent.action, intent.context)
+            }
+
+            is HomeIntent.OnBackPressed -> {
+                _state.update { it.copy(showExitDialog = true) }
+            }
+
+            is HomeIntent.ConfirmExit -> {
+                _state.update { it.copy(showExitDialog = false) }
+                viewModelScope.launch {
+                    _effect.emit(HomeEffect.CloseApp)
+                }
+
+            }
+
+            is HomeIntent.DismissExitDialog -> {
+                _state.update { it.copy(showExitDialog = false) }
+
+            }
+
+            is HomeIntent.OnWhatsNewDismissed -> {
+                viewModelScope.launch {
+                    changelogRepository.markVersionShown(currentVersionCode)
+                    _state.update { it.copy(showWhatsNewDialog = false) }
+                }
+            }
+
+            is HomeIntent.InitializeHome -> {
+                _state.update { it ->
+                    it.copy(
+                        topBarState = it.topBarState.copy(
+                            actions = listOf(
+                                TopBarAction.Backup,
+                                TopBarAction.Restore,
+                                TopBarAction.Settings
+                            )
+                        )
+                    )
+                }
+            }
+
+            is HomeIntent.OnMantraClicked -> {
+                viewModelScope.launch {
+                    _effect.emit(HomeEffect.NavigateToJaapDetail(intent.jaapId))
+
+                }
+            }
+            is HomeIntent.UpdateTopBar ->{
+                _state.update { it.copy(topBarState = it.topBarState.copy(title = intent.title, actions = intent.actions)) }
+            }
+
+
+        }
     }
 
     private fun resetDailyCount() {
@@ -100,44 +172,17 @@ class HomeViewModel @Inject constructor(
             resetTodayCountUseCase()
         }
     }
-    fun setHomeScreenActions(){
-        _topBarState.update { currentState ->
-            currentState.copy(
-                actions = listOf(
-                    TopBarAction.Backup,
-                    TopBarAction.Restore,
-                    TopBarAction.Settings
-                )
-            )
-        }
-    }
 
-    fun addMantra(name: String, size: Int) {
+    private fun handleTopBarAction(action: TopBarAction, context: Context) {
         viewModelScope.launch {
-            insertMantraUseCase(name, DateUtils.getTodayDate(), size)
-            // No need to update _mantras manually; Flow emits updates
-        }
-    }
-
-
-
-    fun deleteJaap(jaap: JaapEntity) {
-        viewModelScope.launch {
-            deleteJaapUseCase(jaap)
-        }
-    }
-
-    fun onTopBarAction(action: TopBarAction,context: Context) {
-        viewModelScope.launch {
-            if (customActionHandler!=null){
-                customActionHandler?.invoke(action,context)
+            if (customActionHandler != null) {
+                customActionHandler?.invoke(action, context)
                 return@launch
             }
             when (action) {
-                is TopBarAction.Backup -> _topBarEvent.emit(TopBarAction.Backup)
-                is TopBarAction.Restore -> _topBarEvent.emit(TopBarAction.Restore)
-                is TopBarAction.Settings -> _topBarEvent.emit(TopBarAction.Settings)
-
+                is TopBarAction.Backup -> _effect.emit(HomeEffect.NavigateToBackup)
+                is TopBarAction.Restore -> _effect.emit(HomeEffect.NavigateToRestore)
+                is TopBarAction.Settings -> _effect.emit(HomeEffect.NavigateToSettings)
                 else -> {}
             }
         }
@@ -146,60 +191,29 @@ class HomeViewModel @Inject constructor(
     fun registerCustomActionHandler(handler: (TopBarAction, Context) -> Unit) {
         customActionHandler = handler
     }
+
     fun unregisterCustomActionHandler() {
         customActionHandler = null
     }
 
-    fun refreshData() {
+    private fun refreshData() {
         refreshTrigger.value = Unit
     }
 
-    fun onBackPressed() {
-        _showExitDialog.value = true
-    }
-
-    fun confirmExit() {
-        _showExitDialog.value = false
-        // Handle actual exit in Activity/Composable
-    }
-
-    fun dismissExitDialog() {
-        _showExitDialog.value = false
-    }
-    fun updateMantraName(jaapId: Int, newName: String) {
-        viewModelScope.launch {
-            updateJaapNameUseCase(jaapId, newName)
-            refreshData() // refresh the list after edit
-        }
-    }
-    /**
-     * Updates the TopBar actions with a new list.
-     * To be called by other screens like JaapDetailScreen.
-     */
-    fun setTopBarActions(actions: List<TopBarAction>) {
-        _topBarState.update { it.copy(actions = actions) }
-    }
     private fun checkForWhatsNew() {
         viewModelScope.launch {
             currentVersionCode = AppVersionProvider(context).getVersionCode(context)
 
             changelogRepository.lastShownVersion.collect { lastShown ->
                 if (currentVersionCode > lastShown) {
-                    _changelogItems.value =
-                        ChangeLogProvider.getChangesFor(currentVersionCode)
+                    val items = ChangeLogProvider.getChangesFor(currentVersionCode)
 
-                    if (_changelogItems.value.isNotEmpty()) {
-                        _showWhatsNew.value = true
+                    if (items.isNotEmpty()) {
+                        _state.update { it.copy(changeLogs = items, showWhatsNewDialog = true) }
                     }
                 }
             }
         }
     }
 
-    fun onWhatsNewDismissed() {
-        viewModelScope.launch {
-            changelogRepository.markVersionShown(currentVersionCode)
-            _showWhatsNew.value = false
-        }
-    }
 }

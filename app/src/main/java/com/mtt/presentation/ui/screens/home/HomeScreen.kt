@@ -50,39 +50,47 @@ fun HomeScreen(
     onExit: () -> Unit,
     paddingValues: PaddingValues
 ) {
-    val showExitDialog by viewModel.showExitDialog.collectAsState()
-    val uiState = viewModel.uiState.collectAsState()
-    val showDialog by viewModel.showWhatsNew.collectAsState()
-    val changelogItems by viewModel.changelogItems.collectAsState()
-    val context = LocalContext.current
-    val versionName = remember {
-        AppVersionProvider(context).getVersionName()
-    }
+    val state by viewModel.state.collectAsState()
+
 
     LaunchedEffect(Unit) {
-        viewModel.setHomeScreenActions()
+        viewModel.onIntent(HomeIntent.InitializeHome)
+
+        viewModel.effect.collect { effect ->
+            when (effect) {
+                is HomeEffect.CloseApp -> {
+                    onExit()
+                }
+
+                is HomeEffect.NavigateToJaapDetail -> {
+                    navController.navigate(Screens.JaapDetailScreen.passJaapId(effect.jaapId))
+                }
+
+                else -> {}
+            }
+        }
     }
     // Intercept back press
     BackHandler {
-        viewModel.onBackPressed()
+        viewModel.onIntent(HomeIntent.OnBackPressed)
     }
-    // Exit dialog
-    if (showExitDialog) {
-        ExitDialog(viewModel, onExit)
-    }
-    if (showDialog) {
-        WhatsNewDialog(
-            versionName = versionName,
-            items = changelogItems,
-            onDismiss = { viewModel.onWhatsNewDismissed() }
-        )
+
+    HomeContent(state,paddingValues,viewModel::onIntent)
+
+}
+@Composable
+fun HomeContent(state: HomeState, paddingValues: PaddingValues,onIntent: (HomeIntent) -> Unit) {
+    val context = LocalContext.current
+
+    val versionName = remember {
+        AppVersionProvider(context).getVersionName()
     }
     Crossfade(
-        targetState = uiState,
+        targetState = state.mantraList,
         animationSpec = tween(durationMillis = 500, easing = LinearEasing),
         label = "Home-crossfade"
-    ) { state ->
-        when (state.value) {
+    ) { mantraListState ->
+        when (mantraListState) {
             is HomeUIState.Loading -> {
                 LoadingPlaceholderView(modifier = Modifier.padding(paddingValues))
             }
@@ -92,37 +100,47 @@ fun HomeScreen(
             }
 
             is HomeUIState.Success -> {
-                val mantras = (uiState.value as HomeUIState.Success).mantras
-                MantraList(mantras, navController, viewModel,paddingValues)
-
+                val mantras = mantraListState.mantras
+                MantraList(mantras, onIntent, paddingValues)
             }
         }
+    }
+    // Exit dialog
+    if (state.showExitDialog) {
+        ExitDialog(onIntent)
+    }
+    if (state.showWhatsNewDialog) {
+        WhatsNewDialog(
+            versionName = versionName,
+            items = state.changeLogs,
+            onDismiss = { onIntent(HomeIntent.OnWhatsNewDismissed) }
+        )
     }
 }
 
 @Composable
 fun MantraList(
     mantras: List<MantraDto>,
-    navController: NavController,
-    viewModel: HomeViewModel,
+    onIntent: (HomeIntent)-> Unit,
     paddingValues: PaddingValues
 ) {
-    LazyColumn(modifier = Modifier.padding(paddingValues).padding(bottom = 16.dp)) {
+    LazyColumn(
+        modifier = Modifier
+            .padding(paddingValues)
+            .padding(bottom = 16.dp)
+    ) {
         items(mantras, key = { it.id }) { mantra ->
             MantraListItem(
                 mantra,
                 onMantraClick = {
-                    navController.navigate(
-                        Screens.JaapDetailScreen.passJaapId(
-                            mantra.id
-                        )
-                    )
+                    onIntent(HomeIntent.OnMantraClicked(mantra.id))
                 },
                 onDeleteMantra = {
-                    viewModel.deleteJaap(mantra.toJaapEntity())
+                    onIntent(HomeIntent.DeleteMantra(mantra.toJaapEntity()))
+
                 },
                 onEditMantra = { newName ->
-                    viewModel.updateMantraName(mantra.id, newName)
+                    onIntent(HomeIntent.UpdateMantraName(mantra.id, newName))
                 },
                 modifier = Modifier.animateItem()
             )
@@ -178,19 +196,18 @@ fun EmptyView(paddingValues: PaddingValues) {
 }
 
 @Composable
-fun ExitDialog(viewModel: HomeViewModel, onExit: () -> Unit) {
+fun ExitDialog(onIntent: (HomeIntent)-> Unit) {
     AlertDialog(
-        onDismissRequest = { viewModel.dismissExitDialog() },
+        onDismissRequest = { onIntent(HomeIntent.DismissExitDialog) },
         title = { Text("Exit App", fontWeight = FontWeight.Bold) },
         text = { Text("Are you sure you want to exit Jaap Mala?") },
         confirmButton = {
             TextButton(onClick = {
-                viewModel.confirmExit()
-                onExit()
+                onIntent(HomeIntent.ConfirmExit)
             }) { Text("Yes", color = MaterialTheme.colorScheme.error) }
         },
         dismissButton = {
-            TextButton(onClick = { viewModel.dismissExitDialog() }) {
+            TextButton(onClick = { onIntent(HomeIntent.DismissExitDialog) }) {
                 Text("No", color = MaterialTheme.colorScheme.primary)
             }
         },

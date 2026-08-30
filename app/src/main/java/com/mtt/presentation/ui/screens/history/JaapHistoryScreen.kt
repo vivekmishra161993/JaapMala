@@ -1,74 +1,69 @@
 package com.mtt.presentation.ui.screens.history
 
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material3.CenterAlignedTopAppBar
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
+import com.mtt.presentation.ui.screens.home.HomeIntent
+import com.mtt.presentation.ui.screens.home.HomeViewModel
+import com.mtt.presentation.ui.screens.jaap.JaapDetailIntent
 import com.mtt.presentation.ui.screens.jaap.JaapDetailViewModel
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun JaapHistoryScreen(jaapId: Int,
+fun JaapHistoryScreen(
+    jaapId: Int,
     viewModel: JaapDetailViewModel,
-    onBack: () -> Unit
+    homeViewModel: HomeViewModel,
+    padding: PaddingValues
 ) {
-    val mantra by viewModel.mantra.collectAsState()
-    val history by viewModel.history.collectAsState()
+    val state by viewModel.state.collectAsState()
+    val mantra = state.mantra
+    val history = state.history
 
-    // Start collecting history when screen is opened
-    LaunchedEffect(Unit) {
-        viewModel.getHistory(jaapId)
+    LaunchedEffect(jaapId) {
+        viewModel.onIntent(JaapDetailIntent.LoadMantra(jaapId))
+        viewModel.onIntent(JaapDetailIntent.LoadHistory(jaapId))
     }
 
-    Scaffold(
-        topBar = {
-            CenterAlignedTopAppBar(
-                title = { Text("${mantra?.name ?: ""} History") },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
-                    }
-                },
-                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    titleContentColor = MaterialTheme.colorScheme.onPrimary,
-                    navigationIconContentColor = MaterialTheme.colorScheme.onPrimary,
-                    actionIconContentColor = MaterialTheme.colorScheme.onPrimary
-                ),
+    LaunchedEffect(mantra) {
+        mantra?.let {
+            homeViewModel.onIntent(
+                HomeIntent.UpdateTopBar(
+                    title = it.name,
+                    actions = emptyList()
+                )
             )
         }
-    ) { padding ->
-        if (history.isEmpty()) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(padding),
-                contentAlignment = Alignment.Center
-            ) {
-                Text("No History Available")
-            }
-        } else {
-            LazyColumn(modifier = Modifier.padding(padding)) {
-                items(history) { entry ->
-                    HistoryListItem(entry)
-                }
+    }
+
+    if (history.isEmpty()) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding),
+            contentAlignment = Alignment.Center
+        ) {
+            Text("No History Available")
+        }
+    } else {
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .padding(horizontal = 16.dp)
+        ) {
+            items(history) { entry ->
+                HistoryListItem(entry)
             }
         }
     }

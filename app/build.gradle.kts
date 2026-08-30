@@ -9,14 +9,14 @@ plugins {
 
 android {
     namespace = "com.mtt.jaapmala"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.mtt.jaapmala"
         minSdk = 26
-        targetSdk = 35
-        versionCode = 11
-        versionName = "2.0.9"
+        targetSdk = 36
+        versionCode = 12
+        versionName = "2.1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {

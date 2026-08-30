@@ -44,6 +44,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 import androidx.navigation.NavController
 import com.mtt.jaapmala.data.local.entity.JaapEntity
 import com.mtt.jaapmala.util.DateUtils
@@ -51,21 +53,23 @@ import com.mtt.jaapmala.util.formatIndianNumber
 import com.mtt.presentation.ui.screens.FontScaledSpacer
 import com.mtt.presentation.ui.screens.Screens
 import com.mtt.presentation.ui.screens.app_bar.TopBarAction
+import com.mtt.presentation.ui.screens.home.HomeIntent
 import com.mtt.presentation.ui.screens.home.HomeViewModel
 
 @Composable
 fun JaapDetailScreen(
     jaapId: Int,
     navController: NavController,
-    setTitle: (String) -> Unit,
     padding: PaddingValues,
     homeViewModel: HomeViewModel
 ) {
     val viewModel: JaapDetailViewModel = hiltViewModel()
     val context = LocalContext.current
-    val mantra by viewModel.mantra.collectAsState()
-    val showDialog by viewModel.showManualEntryDialog.collectAsState()
-    val meditationSoundEnabled by viewModel.meditationSoundEnabled.collectAsState()
+    val state by viewModel.state.collectAsState()
+    val meditationSoundEnabled = state.isMeditationSoundEnabled
+    val showManualEntryDialog = state.showManualEntryDialog
+    val mantra = state.mantra
+
     val vibrator = remember {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             val manager = context.getSystemService(
@@ -77,33 +81,50 @@ fun JaapDetailScreen(
             context.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
         }
     }
+    //Meditation Sound
     LifeCycleAwareSound(viewModel)
+    val lifeCycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
+
+    DisposableEffect(lifeCycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            when (event) {
+                Lifecycle.Event.ON_START -> {
+                    viewModel.onIntent(JaapDetailIntent.OnAppForegrounded)
+                }
+
+                Lifecycle.Event.ON_STOP -> {
+                    viewModel.onIntent(JaapDetailIntent.OnAppBackgrounded)
+                }
+
+                else -> Unit
+            }
+        }
+        lifeCycleOwner.lifecycle.addObserver(
+            observer
+        )
+        onDispose {
+            lifeCycleOwner.lifecycle.removeObserver(observer)
+        }
+    }
     DisposableEffect(Unit) {
         onDispose {
             viewModel.saveHistoryForToday()
+            homeViewModel.unregisterCustomActionHandler()
         }
     }
-    LaunchedEffect(Unit) {
-        homeViewModel.setTopBarActions(
-            listOf(
-                TopBarAction.IncrementCount,
-                TopBarAction.History,
-                TopBarAction.Share
-            )
-        )
-    }
+
     LaunchedEffect(jaapId) {
-        viewModel.getMantra(jaapId)
+        viewModel.onIntent(JaapDetailIntent.LoadMantra(jaapId))
     }
     LaunchedEffect(viewModel) {
-        homeViewModel.registerCustomActionHandler { action, ctx ->
-            viewModel.onTopBarAction(action, ctx)
+        homeViewModel.registerCustomActionHandler { action, _ ->
+            viewModel.onIntent(JaapDetailIntent.OnTopBarAction(action))
         }
     }
-    LaunchedEffect(Unit) {
-        viewModel.uiEvent.collect {event ->
-            when (event) {
-                JaapUIEvent.TriggerHaptic -> {
+    LaunchedEffect(viewModel) {
+        viewModel.effect.collect { effect ->
+            when (effect) {
+                JaapDetailEffect.TriggerHaptic -> {
                     if (vibrator.hasVibrator()) {
                         vibrator.vibrate(
                             VibrationEffect.createOneShot(
@@ -113,25 +134,24 @@ fun JaapDetailScreen(
                         )
                     }
                 }
-            }
-        }
-    }
-    LaunchedEffect(Unit) {
-        viewModel.topBarEvent.collect { action ->
-            when (action) {
-                is TopBarAction.History -> {
-                    navController.navigate(Screens.JaapHistoryScreen.passJaapId(jaapId))
+
+                is JaapDetailEffect.NavigateToHistory -> {
+                    navController.navigate(Screens.JaapHistoryScreen.passJaapId(effect.jaapId))
                 }
 
-                else -> Unit
+                is JaapDetailEffect.ShareText -> {
+                    val sendIntent = Intent(Intent.ACTION_SEND).apply {
+                        putExtra(Intent.EXTRA_TEXT, effect.shareText)
+                        type = "text/plain"
+                    }
+                    val shareIntent = Intent.createChooser(sendIntent, "Share your Jaap progress")
+                    context.startActivity(shareIntent)
+                }
+
+                is JaapDetailEffect.NavigateBack -> {
+                    navController.popBackStack()
+                }
             }
-        }
-    }
-    LaunchedEffect(meditationSoundEnabled) {
-        if (meditationSoundEnabled) {
-            viewModel.startMeditationSound() // Start immediately on screen enter
-        } else {
-            viewModel.stopMeditationSound()
         }
     }
 
@@ -140,19 +160,16 @@ fun JaapDetailScreen(
         object : BroadcastReceiver() {
             override fun onReceive(context: Context?, intent: Intent?) {
                 when (intent?.action) {
-                    Intent.ACTION_SCREEN_OFF -> viewModel.stopMeditationSound()
+                    Intent.ACTION_SCREEN_OFF -> viewModel.onIntent(JaapDetailIntent.OnAppBackgrounded)
                     Intent.ACTION_USER_PRESENT -> {
-                        if (meditationSoundEnabled) viewModel.startMeditationSound()
+                        if (meditationSoundEnabled)
+                            viewModel.onIntent(JaapDetailIntent.OnAppForegrounded)
                     }
                 }
             }
         }
     }
-    DisposableEffect(Unit) {
-        onDispose {
-            homeViewModel.setHomeScreenActions()
-        }
-    }
+
     DisposableEffect(Unit) {
         val filter = IntentFilter().apply {
             addAction(Intent.ACTION_SCREEN_OFF)
@@ -163,29 +180,39 @@ fun JaapDetailScreen(
         // Also handle normal composable dispose
         onDispose {
             context.unregisterReceiver(screenReceiver)
-            viewModel.stopMeditationSound()
+            viewModel.onIntent(JaapDetailIntent.OnAppBackgrounded)
         }
     }
     DisposableEffect(Unit) {
         onDispose {
-            homeViewModel.setHomeScreenActions()
             homeViewModel.unregisterCustomActionHandler()
         }
     }
 
     // Show dialog
-    if (showDialog) {
+    if (showManualEntryDialog) {
         ManualJaapEntryDialog(
             onSubmit = { enteredCount ->
-                viewModel.dismissManualEntryDialog()
-                viewModel.updateJaapCountManually(jaapId, enteredCount)
+                viewModel.onIntent(JaapDetailIntent.DismissManualEntryDialog)
+                viewModel.onIntent(JaapDetailIntent.SubmitManualEntry(jaapId, enteredCount))
             },
-            onDismiss = { viewModel.dismissManualEntryDialog() }
+            onDismiss = { viewModel.onIntent(JaapDetailIntent.DismissManualEntryDialog) }
         )
     }
 
     mantra?.let { detail ->
-        setTitle(detail.name)
+        LaunchedEffect(detail.name) {
+            homeViewModel.onIntent(
+                HomeIntent.UpdateTopBar(
+                    title = detail.name,
+                    actions = listOf(
+                        TopBarAction.IncrementCount,
+                        TopBarAction.History,
+                        TopBarAction.Share
+                    )
+                )
+            )
+        }
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -211,7 +238,7 @@ fun JaapDetailScreen(
             val buttonSize = (100 * fontScale).dp.coerceIn(100.dp, 140.dp)
 
             Button(
-                onClick = { viewModel.decreaseCount() },
+                onClick = { viewModel.onIntent(JaapDetailIntent.DecreaseCount) },
                 shape = CircleShape,
                 modifier = Modifier
                     .align(Alignment.CenterHorizontally)
@@ -234,12 +261,12 @@ fun JaapDetailScreen(
                     .clickable(
                         interactionSource = remember { MutableInteractionSource() },
                         indication = null
-                    ) { viewModel.increaseCount() },
+                    ) { viewModel.onIntent(JaapDetailIntent.IncreaseCount) },
                 contentAlignment = Alignment.Center
             ) {
                 ProgressCountButton(
                     currentCount = detail.count,
-                    onClick = { viewModel.increaseCount()},
+                    onClick = { viewModel.onIntent(JaapDetailIntent.IncreaseCount) },
                     malaSize = detail.malaSize
                 )
             }

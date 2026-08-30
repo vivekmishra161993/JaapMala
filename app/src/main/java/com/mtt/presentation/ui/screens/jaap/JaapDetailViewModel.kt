@@ -1,13 +1,8 @@
 package com.mtt.presentation.ui.screens.jaap
 
-import android.content.Context
-import android.content.Intent
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.mtt.jaapmala.R
-import com.mtt.jaapmala.data.SoundManager
-import com.mtt.jaapmala.data.local.entity.JaapEntity
-import com.mtt.jaapmala.data.local.entity.JaapHistoryEntity
 import com.mtt.jaapmala.domain.usecase.EnsureTodayUseCase
 import com.mtt.jaapmala.domain.usecase.GetHapticFeedbackUseCase
 import com.mtt.jaapmala.domain.usecase.GetHapticFrequencyUseCase
@@ -24,14 +19,15 @@ import com.mtt.jaapmala.util.JaapSoundManager
 import com.mtt.presentation.ui.screens.app_bar.TopBarAction
 import com.mtt.presentation.ui.screens.settings.SoundMode
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.receiveAsFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 import javax.inject.Inject
@@ -44,7 +40,6 @@ class JaapDetailViewModel @Inject constructor(
     private val saveJaapHistoryUseCase: SaveJaapHistoryUseCase,
     private val getJaapHistoryUseCase: GetJaapHistoryUseCase,
     private val getMeditationSoundEnabledUseCase: GetMeditationSoundEnabledUseCase,
-    private val meditationSoundManager: SoundManager,
     private val updateGoalProgressUseCase: UpdateGoalProgressUseCase,
     private val shouldTriggerHapticUseCase: ShouldTriggerHapticUseCase,
     private val ensureTodayUseCase: EnsureTodayUseCase,
@@ -53,170 +48,245 @@ class JaapDetailViewModel @Inject constructor(
     private val getHapticFrequencyUseCase: GetHapticFrequencyUseCase,
     private val getHapticFeedbackUseCase: GetHapticFeedbackUseCase
 ) : ViewModel() {
-    private val _mantra = MutableStateFlow<JaapEntity?>(null)
-    val mantra: StateFlow<JaapEntity?> = _mantra
+    private val _state = MutableStateFlow(JaapDetailState())
+    val state: StateFlow<JaapDetailState> = _state.asStateFlow()
+    private val _effect = Channel<JaapDetailEffect>(Channel.BUFFERED)
+    val effect = _effect.receiveAsFlow()
 
-    private val _uiEvent = MutableSharedFlow<JaapUIEvent>()
-    val uiEvent = _uiEvent.asSharedFlow()
-    private val _updateStatus = MutableStateFlow<Boolean?>(null)
-    val updateStatus = _updateStatus.asStateFlow()
-
-    private val _showManualEntryDialog = MutableStateFlow(false)
-    val showManualEntryDialog: StateFlow<Boolean> = _showManualEntryDialog
-
-    private val _history = MutableStateFlow<List<JaapHistoryEntity>>(emptyList())
-    val history: StateFlow<List<JaapHistoryEntity>> = _history
-
-    private val _topBarEvent = MutableSharedFlow<TopBarAction>()
-    val topBarEvent = _topBarEvent.asSharedFlow()
-    val meditationSoundEnabled = getMeditationSoundEnabledUseCase()
-        .stateIn(viewModelScope, SharingStarted.Lazily, false)
-    private var currentSoundMode: SoundMode = SoundMode.MALA_COMPLETION
-    var hapticFeedbackEnabled: Boolean = false
-
-    val hapticFrequency = getHapticFrequencyUseCase()
-        .stateIn(
-            viewModelScope,
-            SharingStarted.WhileSubscribed(5000),
-            1
-        )
 
     init {
-        viewModelScope.launch {
-            currentSoundMode = getSoundModeUseCase().first()
-            hapticFeedbackEnabled = getHapticFeedbackUseCase().first()
-
-        }
+        observeSettings()
     }
-    fun getMantra(id: Int) {
-        viewModelScope.launch {
-            getMantraUseCase(id).collect { entity ->
-                // Directly set the mantra, initializing counts on load if necessary
-                _mantra.value = entity.copy(
-                    count = entity.count.takeIf { it >= 0 } ?: 0, // Ensure count is never negative
-                    sessionCount = entity.sessionCount.takeIf { it >= 0 } ?: 0,
-                    sessionMalaCount = entity.sessionMalaCount.takeIf { it >= 0 } ?: 0
+
+    fun onIntent(intent: JaapDetailIntent) {
+        when (intent) {
+            is JaapDetailIntent.DecreaseCount -> {
+                decreaseCount()
+            }
+
+            JaapDetailIntent.IncreaseCount -> increaseCount()
+            JaapDetailIntent.ShowManualEntryDialog -> {
+                reduce {
+                    copy(showManualEntryDialog = true)
+                }
+            }
+
+            JaapDetailIntent.DismissManualEntryDialog ->
+                reduce {
+                    copy(showManualEntryDialog = false, updateStatus = null)
+                }
+
+            is JaapDetailIntent.SubmitManualEntry -> {
+                updateJaapCountManually(
+                    intent.id,
+                    intent.count
                 )
             }
+
+            is JaapDetailIntent.OnTopBarAction -> {
+                onTopBarAction(intent.action)
+            }
+
+            is JaapDetailIntent.LoadMantra -> {
+                getMantra(intent.id)
+            }
+
+            is JaapDetailIntent.LoadHistory -> {
+                getHistory(intent.id)
+            }
+
+            JaapDetailIntent.OnAppBackgrounded -> onAppBackgrounded()
+            JaapDetailIntent.OnAppForegrounded -> onAppForegrounded()
+
         }
     }
 
-    fun increaseCount() {
-        _mantra.value?.let { current ->
-
-            viewModelScope.launch {
-
-                val safeCurrent = ensureTodayUseCase(current)
-
-                val nextCount = safeCurrent.count + 1
-                val isMalaCompleted =
-                    nextCount % safeCurrent.malaSize == 0
-
-                var newCount = nextCount
-                var newMalaCount = safeCurrent.todayMalaCount
-                var newLifetimeMalaCount = safeCurrent.lifetimeMalaCount
-                var newSessionMalaCount = safeCurrent.sessionMalaCount
-
-                // -------------------------
-                // HAPTIC (NO FLOW COLLECTION)
-                // -------------------------
-                if (hapticFeedbackEnabled) {
-                    val frequency = hapticFrequency.value
-
-                    if (frequency > 0 && nextCount % frequency == 0) {
-                        _uiEvent.emit(JaapUIEvent.TriggerHaptic)
-                    }
-                }
-
-                // -------------------------
-                // MALA COMPLETION LOGIC
-                // -------------------------
-                if (isMalaCompleted) {
-
-                    newCount = 0
-                    newMalaCount += 1
-                    newLifetimeMalaCount += 1
-                    newSessionMalaCount += 1
-
-                    updateGoalProgressUseCase(
-                        safeCurrent.id,
-                        malaIncrement = 1
+    private fun observeSettings() {
+        viewModelScope.launch {
+            combine(
+                getSoundModeUseCase(),
+                getHapticFeedbackUseCase(),
+                getHapticFrequencyUseCase(),
+                getMeditationSoundEnabledUseCase()
+            ) { mode, hapticEnabled, frequency, meditationSoundEnabled ->
+                reduce {
+                    copy(
+                        soundMode = mode,
+                        isHapticFeedbackEnabled = hapticEnabled,
+                        hapticFrequency = frequency,
+                        isMeditationSoundEnabled = meditationSoundEnabled
                     )
                 }
+            }.collect()
+        }
+    }
 
-                // -------------------------
-                // SOUND HANDLING
-                // -------------------------
-                handleSound(isMalaCompleted)
-
-                val updated = safeCurrent.copy(
-                    count = newCount,
-                    todayCount = safeCurrent.todayCount + 1,
-                    lifetimeCount = safeCurrent.lifetimeCount + 1,
-                    sessionCount = safeCurrent.sessionCount + 1,
-                    todayMalaCount = newMalaCount,
-                    lifetimeMalaCount = newLifetimeMalaCount,
-                    sessionMalaCount = newSessionMalaCount
+    private fun getMantra(id: Int) {
+        viewModelScope.launch {
+            getMantraUseCase(id).collectLatest { entity ->
+                val safeEntity = entity.copy(
+                    count = entity.count.coerceAtLeast(0),
+                    sessionCount = entity.sessionCount.coerceAtLeast(0),
+                    sessionMalaCount = entity.sessionMalaCount.coerceAtLeast(0)
                 )
-
-                _mantra.value = updated
-                updateJaapUseCase(updated)
-            }
-        }
-    }
-
-
-    fun decreaseCount() {
-        _mantra.value?.let { current ->
-
-            viewModelScope.launch {
-
-                val safeCurrent = ensureTodayUseCase(current)
-
-                if (safeCurrent.count > 0) {
-                    val updated = safeCurrent.copy(
-                        count = safeCurrent.count - 1,
-                        todayCount = maxOf(safeCurrent.todayCount - 1, 0),
-                        lifetimeCount = maxOf(safeCurrent.lifetimeCount - 1, 0),
-                        sessionCount = maxOf(safeCurrent.sessionCount - 1, 0)
-                    )
-
-                    _mantra.value = updated
-                    updateJaapUseCase(updated)
+                reduce {
+                    copy(mantra = safeEntity)
                 }
             }
         }
     }
 
+    private fun increaseCount() {
 
-    fun updateJaapCountManually(jaapId: Int, addedCount: Int) {
+        val current = state.value.mantra ?: return
+
+        viewModelScope.launch {
+
+            val safeCurrent = ensureTodayUseCase(current)
+
+            val nextCount = safeCurrent.count + 1
+            val isMalaCompleted =
+                nextCount % safeCurrent.malaSize == 0
+
+            var newCount = nextCount
+            var newMalaCount = safeCurrent.todayMalaCount
+            var newLifetimeMalaCount = safeCurrent.lifetimeMalaCount
+            var newSessionMalaCount = safeCurrent.sessionMalaCount
+
+            // -------------------------
+            // MALA COMPLETION LOGIC
+            // -------------------------
+            if (isMalaCompleted) {
+
+                newCount = 0
+                newMalaCount += 1
+                newLifetimeMalaCount += 1
+                newSessionMalaCount += 1
+
+                updateGoalProgressUseCase(
+                    safeCurrent.id,
+                    malaIncrement = 1
+                )
+            }
+
+            // -------------------------
+            // SOUND HANDLING
+            // -------------------------
+
+            val updated = safeCurrent.copy(
+                count = newCount,
+                todayCount = safeCurrent.todayCount + 1,
+                lifetimeCount = safeCurrent.lifetimeCount + 1,
+                sessionCount = safeCurrent.sessionCount + 1,
+                todayMalaCount = newMalaCount,
+                lifetimeMalaCount = newLifetimeMalaCount,
+                sessionMalaCount = newSessionMalaCount
+            )
+
+            reduce {
+                copy(mantra = updated)
+            }
+            viewModelScope.launch {
+                handleHaptic(nextCount = nextCount)
+            }
+            handleSound(isMalaCompleted = isMalaCompleted)
+            updateJaapUseCase(updated)
+        }
+    }
+
+
+    private fun decreaseCount() {
+        val current = state.value.mantra ?: return
+
+        viewModelScope.launch {
+
+            val safeCurrent = ensureTodayUseCase(current)
+            if (safeCurrent.count <= 0) {
+                return@launch
+            }
+            val updated = safeCurrent.copy(
+                count = safeCurrent.count - 1,
+                todayCount = maxOf(safeCurrent.todayCount - 1, 0),
+                lifetimeCount = maxOf(safeCurrent.lifetimeCount - 1, 0),
+                sessionCount = maxOf(safeCurrent.sessionCount - 1, 0)
+            )
+
+            reduce {
+                copy(mantra = updated)
+            }
+            updateJaapUseCase(updated)
+
+        }
+    }
+
+
+    private suspend fun handleHaptic(nextCount: Int) {
+        val currentState = state.value
+        if (!currentState.isHapticFeedbackEnabled) {
+            return
+        }
+        val frequency = currentState.hapticFrequency
+        if (frequency <= 0) {
+            return
+        }
+        if (nextCount % frequency != 0) {
+            return
+        }
+        _effect.send(JaapDetailEffect.TriggerHaptic)
+    }
+
+    private fun updateJaapCountManually(jaapId: Int, addedCount: Int) {
         viewModelScope.launch {
             try {
                 updateJaapManuallyUseCase.invoke(jaapId, addedCount)
-                updateGoalProgressUseCase.invoke(jaapId,  malaIncrement = (addedCount/_mantra.value!!.malaSize))
+                val mantra = state.value.mantra ?: return@launch
+                val malaIncrement = if (mantra.malaSize > 0) {
+                    addedCount / mantra.malaSize
+                } else {
+                    0
+                }
+                updateGoalProgressUseCase.invoke(
+                    jaapId,
+                    malaIncrement = malaIncrement
+                )
 
-                _updateStatus.value = true
+                reduce {
+                    copy(updateStatus = true)
+                }
             } catch (e: Exception) {
-                _updateStatus.value = false
+                reduce {
+                    copy(updateStatus = false)
+                }
             }
         }
     }
-    fun onTopBarAction(action: TopBarAction,context: Context) {
+
+    private fun onTopBarAction(action: TopBarAction) {
         viewModelScope.launch {
             when (action) {
-                is TopBarAction.IncrementCount -> { _showManualEntryDialog.value = true }
-                is TopBarAction.History -> { _topBarEvent.emit(TopBarAction.History)}
-                is TopBarAction.Share -> {shareProgress(context )}
+                is TopBarAction.IncrementCount -> {
+                    reduce {
+                        copy(showManualEntryDialog = true)
+                    }
+                }
+
+                is TopBarAction.History -> {
+                    val jaapId = state.value.mantra?.id ?: return@launch
+                    _effect.send(JaapDetailEffect.NavigateToHistory(jaapId))
+                }
+
+                is TopBarAction.Share -> {
+                    shareProgress()
+                }
+
                 else -> {}
             }
         }
     }
-    fun dismissManualEntryDialog() {
-        _showManualEntryDialog.value = false
-    }
+
     fun saveHistoryForToday() {
         viewModelScope.launch {
-            val mantra = _mantra.value ?: return@launch
+            val mantra = state.value.mantra ?: return@launch
             val today = LocalDate.now().toString()
 
             saveJaapHistoryUseCase(
@@ -227,54 +297,30 @@ class JaapDetailViewModel @Inject constructor(
             )
         }
     }
-    fun getHistory(id: Int) {
-        viewModelScope.launch {
-            getJaapHistoryUseCase(id).collect { list ->
-                _history.value = list
-            }
-        }
-    }
-    fun shareProgress(context: Context) {
+
+    private fun shareProgress() {
+        val mantra = state.value.mantra ?: return
         val appLink = "https://play.google.com/store/apps/details?id=com.mtt.jaapmala"
         val shareText = """
-            I am practicing "${_mantra.value?.name}" using Jaap Mala app!
-            Today's count: ${_mantra.value?.todayCount}
-            Lifetime count: ${_mantra.value?.lifetimeCount}
+            I am practicing "${mantra.name}" using Jaap Mala app!
+            Today's count: ${mantra.todayCount}
+            Lifetime count: ${mantra.lifetimeCount}
             Download the app here: $appLink
         """.trimIndent()
-        val sendIntent = Intent().apply {
-            action = Intent.ACTION_SEND
-            putExtra(Intent.EXTRA_TEXT, shareText)
-            type = "text/plain"
+        viewModelScope.launch {
+            _effect.send(JaapDetailEffect.ShareText(shareText = shareText))
         }
-        val shareIntent = Intent.createChooser(sendIntent, "Share your Jaap progress")
-        context.startActivity(shareIntent)
-    }
-    fun onAppPaused() {
-        meditationSoundManager.onAppBackgrounded()
-    }
-
-    fun onAppResumed() {
-        meditationSoundManager.onAppForegrounded()
     }
 
     override fun onCleared() {
         super.onCleared()
-        meditationSoundManager.releaseAll()
     }
-    fun startMeditationSound() {
-        if (meditationSoundEnabled.value) {
-            meditationSoundManager.playMeditationSound(R.raw.sound)
-        }
-    }
-    fun stopMeditationSound() {
-        meditationSoundManager.stopMeditationSound()
-    }
+
     private fun handleSound(isMalaCompleted: Boolean) {
 
-        when (currentSoundMode) {
+        when (state.value.soundMode) {
 
-            SoundMode.OFF -> { }
+            SoundMode.OFF -> {}
 
             SoundMode.EVERY_COUNT -> {
                 jaapSoundManager.playJaapTick()
@@ -288,8 +334,39 @@ class JaapDetailViewModel @Inject constructor(
                     jaapSoundManager.playMalaBell()
                 }
             }
-        }
-        }
 
+        }
+    }
 
+    private fun getHistory(id: Int) {
+        viewModelScope.launch {
+            getJaapHistoryUseCase(id).collect { list ->
+                reduce {
+                    copy(history = list)
+                }
+            }
+        }
+    }
+
+    private fun onAppBackgrounded() {
+        viewModelScope.launch {
+            jaapSoundManager.stopMeditation()
+        }
+    }
+
+    private fun onAppForegrounded() {
+        viewModelScope.launch {
+            if (state.value.isMeditationSoundEnabled) {
+                jaapSoundManager.startMeditation(R.raw.sound)
+            }
+        }
+    }
+
+    private fun reduce(
+        reducer: JaapDetailState.() -> JaapDetailState
+    ) {
+        _state.update {
+            it.reducer()
+        }
+    }
 }
