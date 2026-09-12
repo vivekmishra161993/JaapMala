@@ -3,10 +3,10 @@ package com.mtt.presentation.ui.screens.goals
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.mtt.jaapmala.data.local.entity.GoalEntity
-import com.mtt.jaapmala.domain.usecase.CheckGoalStatusUseCase
-import com.mtt.jaapmala.domain.usecase.DeleteGoalUseCase
-import com.mtt.jaapmala.domain.usecase.GetGoalsUseCase
-import com.mtt.jaapmala.domain.usecase.UpdateGoalProgressUseCase
+import com.mtt.jaapmala.domain.usecase.goals.CheckGoalStatusUseCase
+import com.mtt.jaapmala.domain.usecase.goals.DeleteGoalUseCase
+import com.mtt.jaapmala.domain.usecase.goals.GetGoalsUseCase
+import com.mtt.jaapmala.domain.usecase.goals.UpdateGoalProgressUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay

@@ -1,0 +1,11 @@
+package com.mtt.jaapmala.domain.usecase.haptics
+
+import com.mtt.jaapmala.domain.repository.SettingsRepository
+import kotlinx.coroutines.flow.Flow
+import javax.inject.Inject
+
+class GetHapticFeedbackUseCase @Inject constructor(
+    private val repo: SettingsRepository
+) {
+    operator fun invoke(): Flow<Boolean> = repo.hapticFeedbackEnabled
+}

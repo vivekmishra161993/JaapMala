@@ -3,6 +3,7 @@ package com.mtt.jaapmala.domain.usecase
 import app.cash.turbine.test
 import com.mtt.jaapmala.data.local.entity.JaapHistoryEntity
 import com.mtt.jaapmala.domain.repository.JaapHistoryRepository
+import com.mtt.jaapmala.domain.usecase.jaap.GetJaapHistoryUseCase
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.flow.flowOf

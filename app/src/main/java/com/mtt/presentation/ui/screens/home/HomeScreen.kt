@@ -37,7 +37,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.mtt.jaapmala.data.model.MantraDto
-import com.mtt.jaapmala.util.toJaapEntity
+import com.mtt.jaapmala.data.mapper.toJaapEntity
 import com.mtt.presentation.ui.screens.Screens
 import com.mtt.presentation.ui.screens.whats_new.AppVersionProvider
 import com.mtt.presentation.ui.screens.whats_new.WhatsNewDialog

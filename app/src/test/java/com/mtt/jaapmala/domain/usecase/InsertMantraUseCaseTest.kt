@@ -1,7 +1,7 @@
 import com.google.common.truth.Truth.assertThat
 import com.mtt.jaapmala.data.model.MantraDto
 import com.mtt.jaapmala.domain.repository.JaapRepository
-import com.mtt.jaapmala.domain.usecase.InsertMantraUseCase
+import com.mtt.jaapmala.domain.usecase.jaap.InsertMantraUseCase
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk

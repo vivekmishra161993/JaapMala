@@ -3,6 +3,7 @@ package com.mtt.jaapmala.domain.usecase
 import com.mtt.jaapmala.data.local.entity.JaapEntity
 import com.mtt.jaapmala.domain.JaapCountCalculator
 import com.mtt.jaapmala.domain.repository.JaapRepository
+import com.mtt.jaapmala.domain.usecase.jaap.UpdateJaapManuallyUseCase
 import io.mockk.Called
 import io.mockk.coEvery
 import io.mockk.coVerify

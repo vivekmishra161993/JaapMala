@@ -4,18 +4,21 @@ import androidx.room.Database
 import androidx.room.RoomDatabase
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
+import com.mtt.jaapmala.data.local.dao.DailyGoalDao
 import com.mtt.jaapmala.data.local.dao.GoalDao
 import com.mtt.jaapmala.data.local.dao.JaapDao
 import com.mtt.jaapmala.data.local.dao.JaapHistoryDao
+import com.mtt.jaapmala.data.local.entity.DailyGoalEntity
 import com.mtt.jaapmala.data.local.entity.GoalEntity
 import com.mtt.jaapmala.data.local.entity.JaapEntity
 import com.mtt.jaapmala.data.local.entity.JaapHistoryEntity
 
-@Database(entities = [JaapEntity::class, JaapHistoryEntity::class, GoalEntity::class], version = 6, exportSchema = true)
+@Database(entities = [JaapEntity::class, JaapHistoryEntity::class, GoalEntity::class, DailyGoalEntity::class], version = 7, exportSchema = true)
 abstract class JaapDatabase: RoomDatabase() {
     abstract fun jaapDao():JaapDao
     abstract fun jaapHistoryDao(): JaapHistoryDao
     abstract fun goalDao() : GoalDao
+    abstract fun dailyGoalDao(): DailyGoalDao
 }
 val MIGRATION_1_2 = object : Migration(1, 2) {
     override fun migrate(db: SupportSQLiteDatabase) {
@@ -185,6 +188,41 @@ val MIGRATION_GOAL_REMOVE_JAAP_NAME_5_6 = object : Migration(
 
         // 5️⃣ Recreate index
         database.execSQL("CREATE INDEX index_goals_jaapId ON goals(jaapId)")
+    }
+}
+val MIGRATION_6_7 = object : Migration(6, 7) {
+
+    override fun migrate(db: SupportSQLiteDatabase) {
+
+        db.execSQL(
+            """
+            CREATE TABLE IF NOT EXISTS daily_goals (
+                id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                jaapId INTEGER NOT NULL,
+                targetMalas INTEGER NOT NULL,
+                startDate TEXT NOT NULL,
+                endDate TEXT,
+                isActive INTEGER NOT NULL,
+                FOREIGN KEY(jaapId)
+                    REFERENCES jaaps(id)
+                    ON DELETE CASCADE
+            )
+            """.trimIndent()
+        )
+
+        db.execSQL(
+            """
+            CREATE INDEX IF NOT EXISTS index_daily_goals_jaapId
+            ON daily_goals(jaapId)
+            """.trimIndent()
+        )
+
+        db.execSQL(
+            """
+            CREATE INDEX IF NOT EXISTS index_daily_goals_isActive
+            ON daily_goals(isActive)
+            """.trimIndent()
+        )
     }
 }
 

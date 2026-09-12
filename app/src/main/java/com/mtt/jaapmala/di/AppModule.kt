@@ -6,6 +6,7 @@ import android.net.Uri
 import android.widget.Toast
 import androidx.room.Room
 import com.mtt.jaapmala.data.SoundManager
+import com.mtt.jaapmala.data.local.dao.DailyGoalDao
 import com.mtt.jaapmala.data.local.dao.GoalDao
 import com.mtt.jaapmala.data.local.dao.JaapDao
 import com.mtt.jaapmala.data.local.dao.JaapHistoryDao
@@ -18,33 +19,35 @@ import com.mtt.jaapmala.data.local.db.FileHelper
 import com.mtt.jaapmala.data.local.db.JaapDatabase
 import com.mtt.jaapmala.data.local.db.Notifier
 import com.mtt.jaapmala.data.repository.ChangeLogRepoImpl
+import com.mtt.jaapmala.data.repository.DailyGoalRepoImpl
 import com.mtt.jaapmala.data.repository.GoalRepositoryImpl
 import com.mtt.jaapmala.data.repository.JaapHistoryRepositoryImpl
 import com.mtt.jaapmala.data.repository.JaapRepositoryImpl
 import com.mtt.jaapmala.data.repository.SettingsRepositoryImpl
 import com.mtt.jaapmala.domain.repository.ChangelogRepository
+import com.mtt.jaapmala.domain.repository.DailyGoalRepository
 import com.mtt.jaapmala.domain.repository.GoalRepository
 import com.mtt.jaapmala.domain.repository.JaapHistoryRepository
 import com.mtt.jaapmala.domain.repository.JaapRepository
 import com.mtt.jaapmala.domain.repository.SettingsRepository
-import com.mtt.jaapmala.domain.usecase.AddGoalUseCase
-import com.mtt.jaapmala.domain.usecase.DeleteGoalUseCase
-import com.mtt.jaapmala.domain.usecase.GetDailyReminderEnabledUseCase
-import com.mtt.jaapmala.domain.usecase.GetGoalsUseCase
-import com.mtt.jaapmala.domain.usecase.GetHapticFeedbackUseCase
-import com.mtt.jaapmala.domain.usecase.GetHapticFrequencyUseCase
-import com.mtt.jaapmala.domain.usecase.GetJaapHistoryUseCase
-import com.mtt.jaapmala.domain.usecase.GetMeditationSoundUseCase
-import com.mtt.jaapmala.domain.usecase.GetReminderTimeUseCase
-import com.mtt.jaapmala.domain.usecase.GetThemeOptionUseCase
-import com.mtt.jaapmala.domain.usecase.SaveJaapHistoryUseCase
-import com.mtt.jaapmala.domain.usecase.SetDailyReminderEnabledUseCase
-import com.mtt.jaapmala.domain.usecase.SetHapticFeedbackUseCase
-import com.mtt.jaapmala.domain.usecase.SetHapticFrequencyUseCase
-import com.mtt.jaapmala.domain.usecase.SetMeditationSoundUseCase
-import com.mtt.jaapmala.domain.usecase.SetReminderTimeUseCase
-import com.mtt.jaapmala.domain.usecase.SetThemeOptionUseCase
-import com.mtt.jaapmala.domain.usecase.UpdateGoalProgressUseCase
+import com.mtt.jaapmala.domain.usecase.goals.AddGoalUseCase
+import com.mtt.jaapmala.domain.usecase.goals.DeleteGoalUseCase
+import com.mtt.jaapmala.domain.usecase.reminder.GetDailyReminderEnabledUseCase
+import com.mtt.jaapmala.domain.usecase.goals.GetGoalsUseCase
+import com.mtt.jaapmala.domain.usecase.haptics.GetHapticFeedbackUseCase
+import com.mtt.jaapmala.domain.usecase.haptics.GetHapticFrequencyUseCase
+import com.mtt.jaapmala.domain.usecase.jaap.GetJaapHistoryUseCase
+import com.mtt.jaapmala.domain.usecase.sound.GetMeditationSoundUseCase
+import com.mtt.jaapmala.domain.usecase.reminder.GetReminderTimeUseCase
+import com.mtt.jaapmala.domain.usecase.theme.GetThemeOptionUseCase
+import com.mtt.jaapmala.domain.usecase.jaap.SaveJaapHistoryUseCase
+import com.mtt.jaapmala.domain.usecase.reminder.SetDailyReminderEnabledUseCase
+import com.mtt.jaapmala.domain.usecase.haptics.SetHapticFeedbackUseCase
+import com.mtt.jaapmala.domain.usecase.haptics.SetHapticFrequencyUseCase
+import com.mtt.jaapmala.domain.usecase.sound.SetMeditationSoundUseCase
+import com.mtt.jaapmala.domain.usecase.reminder.SetReminderTimeUseCase
+import com.mtt.jaapmala.domain.usecase.theme.SetThemeOptionUseCase
+import com.mtt.jaapmala.domain.usecase.goals.UpdateGoalProgressUseCase
 import com.mtt.jaapmala.util.JaapSoundManager
 import com.mtt.jaapmala.util.ReminderScheduler
 import dagger.Module
@@ -86,6 +89,10 @@ object AppModule {
     fun provideGoalDao(provider: DatabaseProvider): GoalDao {
         return provider.getDatabase().goalDao()
     }
+    @Provides
+    fun provideDailyGoalDao(provider: DatabaseProvider): DailyGoalDao{
+        return provider.getDatabase().dailyGoalDao()
+    }
 
     @Provides
     fun provideRepository(dao: JaapDao): JaapRepository {
@@ -95,6 +102,10 @@ object AppModule {
     @Provides
     fun provideGoalRepository(dao: GoalDao): GoalRepository {
         return GoalRepositoryImpl(dao)
+    }
+    @Provides
+    fun provideDailyGoalRepository(dao: DailyGoalDao): DailyGoalRepository{
+        return DailyGoalRepoImpl(dao)
     }
 
     @Provides
@@ -191,6 +202,8 @@ object AppModule {
     fun provideChangeLogRepository(@ApplicationContext context: Context): ChangelogRepository {
         return ChangeLogRepoImpl(context)
     }
+
+
 
     @Provides
     @Singleton

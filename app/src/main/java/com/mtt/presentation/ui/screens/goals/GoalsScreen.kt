@@ -27,7 +27,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.mtt.jaapmala.util.toEntity
+import com.mtt.jaapmala.data.mapper.toEntity
 import com.mtt.presentation.ui.screens.home.LoadingPlaceholderView
 
 @OptIn(ExperimentalMaterial3Api::class)

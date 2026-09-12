@@ -4,6 +4,7 @@ import app.cash.turbine.test
 import com.google.common.truth.Truth.assertThat
 import com.mtt.jaapmala.data.local.entity.JaapEntity
 import com.mtt.jaapmala.domain.repository.JaapRepository
+import com.mtt.jaapmala.domain.usecase.jaap.GetMantrasUseCase
 import io.mockk.coEvery
 import io.mockk.mockk
 import kotlinx.coroutines.ExperimentalCoroutinesApi
