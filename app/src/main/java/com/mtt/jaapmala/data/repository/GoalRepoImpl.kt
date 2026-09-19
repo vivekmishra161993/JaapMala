@@ -2,9 +2,9 @@ package com.mtt.jaapmala.data.repository
 
 import com.mtt.jaapmala.data.local.dao.GoalDao
 import com.mtt.jaapmala.data.local.entity.GoalEntity
-import com.mtt.jaapmala.domain.repository.GoalRepository
 import com.mtt.jaapmala.data.mapper.toUiModel
-import com.mtt.presentation.ui.screens.goals.GoalUiModel
+import com.mtt.jaapmala.domain.repository.GoalRepository
+import com.mtt.presentation.ui.screens.lifetime_goals.GoalUiModel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 

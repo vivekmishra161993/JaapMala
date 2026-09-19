@@ -47,5 +47,26 @@ object DateUtils {
         val formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy")
         return today.format(formatter)
     }
+    fun generateDateRange(
+        startDate: String,
+        endDate: String
+    ): List<String> {
+
+        val start = LocalDate.parse(startDate)
+        val end = LocalDate.parse(endDate)
+
+        if (start.isAfter(end)) {
+            return emptyList()
+        }
+
+        return generateSequence(start) { current ->
+            if (current.isBefore(end)) {
+                current.plusDays(1)
+            } else {
+                null
+            }
+        }.map(LocalDate::toString)
+            .toList()
+    }
 
 }

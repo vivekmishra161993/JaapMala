@@ -13,7 +13,7 @@ import kotlinx.coroutines.flow.Flow
 interface DailyGoalDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insert(goal: DailyGoalEntity)
+    suspend fun insert(goal: DailyGoalEntity): Long
 
     @Update
     suspend fun update(goal: DailyGoalEntity)
@@ -24,7 +24,7 @@ interface DailyGoalDao {
     @Query("""
         SELECT * FROM daily_goals
         WHERE isActive = 1
-        ORDER BY startDate DESC
+        ORDER BY id DESC
     """)
     fun getActiveGoals(): Flow<List<DailyGoalEntity>>
 
@@ -64,4 +64,5 @@ interface DailyGoalDao {
     suspend fun getActiveGoalForJaapOnce(
         jaapId: Int
     ): DailyGoalEntity?
+
 }

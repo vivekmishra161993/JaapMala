@@ -1,4 +1,4 @@
-package com.mtt.presentation.ui.screens.goals
+package com.mtt.presentation.ui.screens.lifetime_goals
 
 import com.mtt.jaapmala.data.local.entity.GoalStatus
 

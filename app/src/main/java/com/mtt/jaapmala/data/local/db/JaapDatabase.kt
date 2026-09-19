@@ -5,21 +5,35 @@ import androidx.room.RoomDatabase
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 import com.mtt.jaapmala.data.local.dao.DailyGoalDao
+import com.mtt.jaapmala.data.local.dao.DailyGoalTargetDao
 import com.mtt.jaapmala.data.local.dao.GoalDao
 import com.mtt.jaapmala.data.local.dao.JaapDao
 import com.mtt.jaapmala.data.local.dao.JaapHistoryDao
 import com.mtt.jaapmala.data.local.entity.DailyGoalEntity
+import com.mtt.jaapmala.data.local.entity.DailyGoalTargetEntity
 import com.mtt.jaapmala.data.local.entity.GoalEntity
 import com.mtt.jaapmala.data.local.entity.JaapEntity
 import com.mtt.jaapmala.data.local.entity.JaapHistoryEntity
 
-@Database(entities = [JaapEntity::class, JaapHistoryEntity::class, GoalEntity::class, DailyGoalEntity::class], version = 7, exportSchema = true)
-abstract class JaapDatabase: RoomDatabase() {
-    abstract fun jaapDao():JaapDao
+@Database(
+    entities = [
+        JaapEntity::class,
+        JaapHistoryEntity::class,
+        GoalEntity::class,
+        DailyGoalEntity::class,
+        DailyGoalTargetEntity::class
+    ],
+    version = 8,
+    exportSchema = true
+)
+abstract class JaapDatabase : RoomDatabase() {
+    abstract fun jaapDao(): JaapDao
     abstract fun jaapHistoryDao(): JaapHistoryDao
-    abstract fun goalDao() : GoalDao
+    abstract fun goalDao(): GoalDao
     abstract fun dailyGoalDao(): DailyGoalDao
+    abstract fun dailyGoalTargetDao(): DailyGoalTargetDao
 }
+
 val MIGRATION_1_2 = object : Migration(1, 2) {
     override fun migrate(db: SupportSQLiteDatabase) {
         db.execSQL(
@@ -156,7 +170,8 @@ val MIGRATION_GOAL_REMOVE_JAAP_NAME_5_6 = object : Migration(
     override fun migrate(database: SupportSQLiteDatabase) {
 
         // 1️⃣ Create new table
-        database.execSQL("""
+        database.execSQL(
+            """
             CREATE TABLE goals_new (
                 id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
                 jaapId INTEGER NOT NULL,
@@ -168,17 +183,20 @@ val MIGRATION_GOAL_REMOVE_JAAP_NAME_5_6 = object : Migration(
                 status TEXT NOT NULL,
                 FOREIGN KEY(jaapId) REFERENCES jaaps(id) ON DELETE CASCADE
             )
-        """)
+        """
+        )
 
         // 2️⃣ Copy data (ignore jaapName)
-        database.execSQL("""
+        database.execSQL(
+            """
             INSERT INTO goals_new (
                 id, jaapId, name, targetMalas, currentMalas, startDate, endDate, status
             )
             SELECT 
                 id, jaapId, name, targetMalas, currentMalas, startDate, endDate, status
             FROM goals
-        """)
+        """
+        )
 
         // 3️⃣ Drop old table
         database.execSQL("DROP TABLE goals")
@@ -225,5 +243,112 @@ val MIGRATION_6_7 = object : Migration(6, 7) {
         )
     }
 }
+val MIGRATION_7_8 = object : Migration(7, 8) {
+
+    override fun migrate(db: SupportSQLiteDatabase) {
+
+        // Drop indexes from the old daily_goals table first.
+        db.execSQL("""
+            DROP INDEX IF EXISTS index_daily_goals_jaapId
+        """.trimIndent())
+
+        db.execSQL("""
+            DROP INDEX IF EXISTS index_daily_goals_isActive
+        """.trimIndent())
+
+        // Rename old table
+        db.execSQL("""
+            ALTER TABLE daily_goals
+            RENAME TO daily_goals_old
+        """.trimIndent())
+
+        // Create new daily_goals table
+        db.execSQL("""
+            CREATE TABLE daily_goals (
+                id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                jaapId INTEGER NOT NULL,
+                isActive INTEGER NOT NULL,
+                FOREIGN KEY(jaapId)
+                    REFERENCES jaaps(id)
+                    ON DELETE CASCADE
+            )
+        """.trimIndent())
+
+        // Recreate required indexes
+        db.execSQL("""
+            CREATE INDEX index_daily_goals_jaapId
+            ON daily_goals(jaapId)
+        """.trimIndent())
+
+        db.execSQL("""
+            CREATE INDEX index_daily_goals_isActive
+            ON daily_goals(isActive)
+        """.trimIndent())
+
+        // Copy existing goals
+        db.execSQL("""
+            INSERT INTO daily_goals (
+                id,
+                jaapId,
+                isActive
+            )
+            SELECT
+                id,
+                jaapId,
+                isActive
+            FROM daily_goals_old
+        """.trimIndent())
+
+        // Create target history table
+        db.execSQL("""
+            CREATE TABLE daily_goal_targets (
+                id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                dailyGoalId INTEGER NOT NULL,
+                targetMalas INTEGER NOT NULL,
+                effectiveFrom TEXT NOT NULL,
+                effectiveTo TEXT,
+                FOREIGN KEY(dailyGoalId)
+                    REFERENCES daily_goals(id)
+                    ON DELETE CASCADE
+            )
+        """.trimIndent())
+
+        // Target indexes
+        db.execSQL("""
+            CREATE INDEX index_daily_goal_targets_dailyGoalId
+            ON daily_goal_targets(dailyGoalId)
+        """.trimIndent())
+
+        db.execSQL("""
+            CREATE INDEX index_daily_goal_targets_dailyGoalId_effectiveFrom
+            ON daily_goal_targets(
+                dailyGoalId,
+                effectiveFrom
+            )
+        """.trimIndent())
+
+        // Migrate existing target information
+        db.execSQL("""
+            INSERT INTO daily_goal_targets (
+                dailyGoalId,
+                targetMalas,
+                effectiveFrom,
+                effectiveTo
+            )
+            SELECT
+                id,
+                targetMalas,
+                startDate,
+                endDate
+            FROM daily_goals_old
+        """.trimIndent())
+
+        // Remove old table
+        db.execSQL("""
+            DROP TABLE daily_goals_old
+        """.trimIndent())
+    }
+}
+
 
 

@@ -23,14 +23,6 @@ import androidx.room.PrimaryKey
 data class DailyGoalEntity(
     @PrimaryKey(autoGenerate = true)
     val id: Int = 0,
-
     val jaapId: Int,
-
-    val targetMalas: Int,
-
-    val startDate: String, // yyyy-MM-dd
-
-    val endDate: String? = null, // yyyy-MM-dd
-
     val isActive: Boolean = true
 )

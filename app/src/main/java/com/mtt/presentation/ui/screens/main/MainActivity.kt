@@ -25,7 +25,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
@@ -44,6 +47,7 @@ import com.mtt.jaapmala.data.local.db.DatabaseManager
 import com.mtt.jaapmala.domain.model.ThemeOption
 import com.mtt.jaapmala.domain.repository.SettingsRepository
 import com.mtt.jaapmala.util.DateUtils
+import com.mtt.jaapmala.util.GoalType
 import com.mtt.presentation.ui.screens.Screens
 import com.mtt.presentation.ui.screens.add_goal.AddGoalScreen
 import com.mtt.presentation.ui.screens.app_bar.TopAppBarWithMenu
@@ -89,6 +93,7 @@ class MainActivity : ComponentActivity() {
 
             // Declare launchers first
             lateinit var backupManager: DatabaseManager
+            var selectedTab by rememberSaveable { mutableIntStateOf(GoalType.LIFETIME.type) }
 
             val backupLauncher = rememberLauncherForActivityResult(
                 contract = ActivityResultContracts.CreateDocument("application/octet-stream")
@@ -133,25 +138,39 @@ class MainActivity : ComponentActivity() {
             val shouldShowBackButton =
                 currentDestination !in topLevelRoutes && currentDestination != null
             val state by viewModel.state.collectAsState()
-            
+
             LaunchedEffect(currentDestination) {
                 when (currentDestination) {
                     Screens.HomeScreen.route, BottomTabItem.Jaaps.route -> {
                         viewModel.onIntent(HomeIntent.InitializeHome)
-                        viewModel.onIntent(HomeIntent.UpdateTopBar("Jaap Mala", listOf(TopBarAction.Backup, TopBarAction.Restore, TopBarAction.Settings)))
+                        viewModel.onIntent(
+                            HomeIntent.UpdateTopBar(
+                                "Jaap Mala",
+                                listOf(
+                                    TopBarAction.Backup,
+                                    TopBarAction.Restore,
+                                    TopBarAction.Settings
+                                )
+                            )
+                        )
                     }
+
                     BottomTabItem.Goals.route -> {
                         viewModel.onIntent(HomeIntent.UpdateTopBar("Goals", emptyList()))
                     }
+
                     Screens.Settings.route -> {
                         viewModel.onIntent(HomeIntent.UpdateTopBar("Settings", emptyList()))
                     }
+
                     Screens.AddGoalScreen.route -> {
                         viewModel.onIntent(HomeIntent.UpdateTopBar("Add Goal", emptyList()))
                     }
+
                     Screens.AddJaapDialog.route -> {
                         viewModel.onIntent(HomeIntent.UpdateTopBar("Add Mantra", emptyList()))
                     }
+
                     Screens.JaapHistoryScreen.route -> {
                         viewModel.onIntent(HomeIntent.UpdateTopBar("History", emptyList()))
                     }
@@ -188,7 +207,7 @@ class MainActivity : ComponentActivity() {
                             showBackButton = shouldShowBackButton,
                             onBack = { navController.navigateUp() },
                             onActionSelected = { action ->
-                                viewModel.onIntent(HomeIntent.OnTopBarAction(action,this))
+                                viewModel.onIntent(HomeIntent.OnTopBarAction(action, this))
                             },
                             showOverFlowMenu = currentDestination !in hideMenuOnRoutes
                         )
@@ -215,9 +234,10 @@ class MainActivity : ComponentActivity() {
                                 onClick = {
                                     if (currentDestination == BottomTabItem.Jaaps.route) {
                                         navController.navigate(Screens.AddJaapDialog.route)
-                                    } else {
+                                    } else if (selectedTab == GoalType.LIFETIME.type) {
                                         navController.navigate(Screens.AddGoalScreen.route)
-
+                                    } else {
+                                        navController.navigate(Screens.AddJaapDialog.route)
                                     }
                                 },
                                 containerColor = MaterialTheme.colorScheme.primary,
@@ -225,7 +245,7 @@ class MainActivity : ComponentActivity() {
                                 modifier = Modifier.padding(bottom = 16.dp)
                             ) {
                                 Icon(Icons.Filled.Add, "Add")
-                                }
+                            }
 
                         }
                     }
@@ -291,7 +311,13 @@ class MainActivity : ComponentActivity() {
                                 onDismiss = { navController.popBackStack() },
                                 onSubmit = { name, size ->
                                     navController.popBackStack()
-                                    viewModel.onIntent(HomeIntent.AddMantra(name, DateUtils.getTodayDate(),size))
+                                    viewModel.onIntent(
+                                        HomeIntent.AddMantra(
+                                            name,
+                                            DateUtils.getTodayDate(),
+                                            size
+                                        )
+                                    )
                                 }
                             )
                         }
@@ -322,7 +348,12 @@ class MainActivity : ComponentActivity() {
                         }
 
                         composable(BottomTabItem.Goals.route) {
-                            GoalsScreen(paddingValues = innerPadding)
+                            GoalsScreen(
+                                paddingValues = innerPadding,
+                                selectedGoalTab = selectedTab,
+                                onTabSelected = {
+                                    selectedTab = it
+                                })
                         }
                         composable(Screens.AddGoalScreen.route) {
                             AddGoalScreen(paddingValues = innerPadding, navController)

@@ -1,4 +1,4 @@
-package com.mtt.presentation.ui.screens.goals
+package com.mtt.presentation.ui.screens.lifetime_goals
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box

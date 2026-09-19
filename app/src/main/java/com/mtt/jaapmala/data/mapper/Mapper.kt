@@ -1,14 +1,16 @@
 package com.mtt.jaapmala.data.mapper
 
 import com.mtt.jaapmala.data.local.entity.DailyGoalEntity
+import com.mtt.jaapmala.data.local.entity.DailyGoalTargetEntity
 import com.mtt.jaapmala.data.local.entity.GoalEntity
 import com.mtt.jaapmala.data.local.entity.GoalWithJaapName
 import com.mtt.jaapmala.data.local.entity.JaapEntity
 import com.mtt.jaapmala.data.local.entity.JaapHistoryEntity
 import com.mtt.jaapmala.data.model.MantraDto
 import com.mtt.jaapmala.domain.model.DailyGoal
+import com.mtt.jaapmala.domain.model.DailyGoalTarget
 import com.mtt.jaapmala.domain.model.JaapHistory
-import com.mtt.presentation.ui.screens.goals.GoalUiModel
+import com.mtt.presentation.ui.screens.lifetime_goals.GoalUiModel
 
 // 🗃️ Entity -> DTO
 fun JaapEntity.toMantraDto(): MantraDto {
@@ -69,9 +71,6 @@ fun DailyGoalEntity.toDomain(): DailyGoal {
     return DailyGoal(
         id = id,
         jaapId = jaapId,
-        targetMalas = targetMalas,
-        startDate = startDate,
-        endDate = endDate,
         isActive = isActive
     )
 }
@@ -80,9 +79,6 @@ fun DailyGoal.toEntity(): DailyGoalEntity {
     return DailyGoalEntity(
         id = id,
         jaapId = jaapId,
-        targetMalas = targetMalas,
-        startDate = startDate,
-        endDate = endDate,
         isActive = isActive
     )
 }
@@ -102,6 +98,25 @@ fun JaapHistoryEntity.toDomain(): JaapHistory {
         date = date,
         count = count,
         malaCount = malaCount
+    )
+}
+fun DailyGoalTargetEntity.toDomain(): DailyGoalTarget {
+    return DailyGoalTarget(
+        id = id,
+        dailyGoalId = dailyGoalId,
+        targetMalas = targetMalas,
+        effectiveFrom = effectiveFrom,
+        effectiveTo = effectiveTo
+    )
+}
+
+fun DailyGoalTarget.toEntity(): DailyGoalTargetEntity {
+    return DailyGoalTargetEntity(
+        id = id,
+        dailyGoalId = dailyGoalId,
+        targetMalas = targetMalas,
+        effectiveFrom = effectiveFrom,
+        effectiveTo = effectiveTo
     )
 }
 

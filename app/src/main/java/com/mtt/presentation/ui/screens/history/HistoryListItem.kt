@@ -26,12 +26,12 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.mtt.jaapmala.R
-import com.mtt.jaapmala.data.local.entity.JaapHistoryEntity
+import com.mtt.jaapmala.domain.model.JaapHistory
 import com.mtt.jaapmala.util.DateUtils
 
 @Composable
 fun HistoryListItem(
-    history: JaapHistoryEntity
+    history: JaapHistory
 ) {
     Card(
         modifier = Modifier
