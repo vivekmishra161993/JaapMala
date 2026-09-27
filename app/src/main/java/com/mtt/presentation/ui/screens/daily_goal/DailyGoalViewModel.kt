@@ -7,13 +7,14 @@ import com.mtt.jaapmala.domain.usecase.dailygoal.DeactivateDailyGoalUseCase
 import com.mtt.jaapmala.domain.usecase.dailygoal.GetActiveDailyGoalsUseCase
 import com.mtt.jaapmala.domain.usecase.dailygoal.GetDailyGoalHistoryUseCase
 import com.mtt.jaapmala.domain.usecase.dailygoal.GetDailyGoalProgressUseCase
-import com.mtt.jaapmala.util.DateUtils.getTodayDate
+import com.mtt.jaapmala.domain.usecase.jaap.GetMantrasUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
@@ -22,9 +23,10 @@ import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
-import kotlinx.coroutines.flow.onStart
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.time.LocalDate
 import javax.inject.Inject
 
 @HiltViewModel
@@ -33,12 +35,14 @@ class DailyGoalViewModel @Inject constructor(
     private val createDailyGoalUseCase: CreateDailyGoalUseCase,
     private val deactivateDailyGoalUseCase: DeactivateDailyGoalUseCase,
     private val getDailyGoalHistoryUseCase: GetDailyGoalHistoryUseCase,
-    private val getDailyGoalProgressUseCase: GetDailyGoalProgressUseCase
+    private val getDailyGoalProgressUseCase: GetDailyGoalProgressUseCase,
+    private val getMantrasUseCase: GetMantrasUseCase
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(DailyGoalUiState())
     val uiState: StateFlow<DailyGoalUiState> = _uiState.asStateFlow()
     private val _effects = MutableSharedFlow<DailyGoalEffect>()
     val effects: SharedFlow<DailyGoalEffect> = _effects
+    val mantra = getMantrasUseCase().stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 
     private var goalsJob: Job? = null
     private var historyJob: Job? = null
@@ -77,27 +81,30 @@ class DailyGoalViewModel @Inject constructor(
     private fun loadGoals() {
         goalsJob?.cancel()
         goalsJob = getDailyActiveDailyGoalsUseCase()
-            .onStart {
-                _uiState.update {
-                    it.copy(isLoading = true)
-                }
-            }.flatMapLatest { goals ->
-                if (goals.isEmpty()){
+            .flatMapLatest { goals ->
+                if (goals.isEmpty()) {
                     flowOf(emptyList<DailyGoalItemUiModel>())
-                }else{
-                    val today = getTodayDate()
+                } else {
+                    val today = LocalDate.now().toString()
+                    val mantras = mantra.value
                     combine(
                         goals.map { goal ->
-                            getDailyGoalProgressUseCase(goal = goal,
+                            getDailyGoalProgressUseCase(
+                                goal = goal,
                                 date = today
                             )
                         }
-                    ){progessList->
+                    ) { progessList ->
                         goals.mapIndexed { index, goal ->
                             val progress = progessList[index]
+                            val jaapName = mantras
+                                .firstOrNull { it.id == goal.jaapId }
+                                ?.name
+                                ?: "Unknown Jaap"
                             DailyGoalItemUiModel(
                                 goalId = goal.id,
                                 jaapId = goal.jaapId,
+                                jaapName = jaapName,
                                 targetMalas = progress.targetMalas,
                                 completedMalas = progress.completedMalas,
                                 remainingMalas = progress.remainingMalas,
@@ -106,7 +113,7 @@ class DailyGoalViewModel @Inject constructor(
                             )
                         }
                     }
-                }.onEach { items:List<DailyGoalItemUiModel> ->
+                }.onEach { items: List<DailyGoalItemUiModel> ->
                     _uiState.update {
                         it.copy(
                             isLoading = false,

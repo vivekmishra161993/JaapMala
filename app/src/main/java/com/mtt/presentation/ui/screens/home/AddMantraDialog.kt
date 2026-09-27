@@ -24,6 +24,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -33,6 +34,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import com.mtt.jaapmala.R
 
 @Composable
 fun AddMantraDialog(
@@ -64,7 +66,7 @@ fun AddMantraDialog(
             ) {
                 // Title of the dialog
                 Text(
-                    text = "Add New Mantra",
+                    text = stringResource(R.string.add_new_mantra),
                     style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                     modifier = Modifier
                         .fillMaxWidth()
@@ -76,7 +78,7 @@ fun AddMantraDialog(
                 OutlinedTextField(
                     value = name,
                     onValueChange = { name = it },
-                    placeholder = { Text("Enter mantra name") },
+                    placeholder = { Text(stringResource(R.string.enter_mantra_name)) },
                     singleLine = true,
                     modifier = Modifier
                         .fillMaxWidth()
@@ -94,8 +96,8 @@ fun AddMantraDialog(
                             malaSize = newValue
                         }
                     },
-                    label = { Text("Enter Mala Size") },
-                    placeholder = { Text("e.g. 108") },
+                    label = { Text(stringResource(R.string.enter_mala_size)) },
+                    placeholder = { Text(stringResource(R.string.e_g_108)) },
                     keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Number),
                     singleLine = true,
                     modifier = Modifier
@@ -114,7 +116,7 @@ fun AddMantraDialog(
                         onClick = { onDismiss() },
                     ) {
                         Text(
-                            "Cancel",
+                            stringResource(R.string.cancel),
                             style = MaterialTheme.typography.bodyLarge.copy(
                                 fontWeight = FontWeight.SemiBold,
                                 color = MaterialTheme.colorScheme.primary
@@ -137,7 +139,7 @@ fun AddMantraDialog(
                         )
                     ) {
                         Text(
-                            "Submit",
+                            stringResource(R.string.submit),
                             style = MaterialTheme.typography.bodyLarge.copy(
                                 fontWeight = FontWeight.SemiBold
                             ),

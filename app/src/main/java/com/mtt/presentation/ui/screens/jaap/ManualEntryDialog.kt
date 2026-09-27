@@ -10,7 +10,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
+import com.mtt.jaapmala.R
 
 @Composable
 fun ManualJaapEntryDialog(
@@ -21,7 +23,7 @@ fun ManualJaapEntryDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Add Count") },
+        title = { Text(stringResource(R.string.add_count)) },
         text = {
             OutlinedTextField(
                 value = countText,
@@ -31,7 +33,7 @@ fun ManualJaapEntryDialog(
                         countText = newValue
                     }
                 },
-                label = { Text("Enter count") },
+                label = { Text(stringResource(R.string.enter_count)) },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 singleLine = true
             )
@@ -43,12 +45,12 @@ fun ManualJaapEntryDialog(
                     onSubmit(count)
                 }
             }) {
-                Text("Submit")
+                Text(stringResource(R.string.submit))
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Cancel")
+                Text(stringResource(R.string.cancel))
             }
         }
     )

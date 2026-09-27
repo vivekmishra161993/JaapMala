@@ -15,7 +15,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class AddDailyGoalViewModel @Inject constructor(
-    private val getMantrasUseCase: GetMantrasUseCase,
+    getMantrasUseCase: GetMantrasUseCase,
     private val createDailyGoalUseCase: CreateDailyGoalUseCase
 ) : ViewModel() {
     val mantra = getMantrasUseCase().stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())

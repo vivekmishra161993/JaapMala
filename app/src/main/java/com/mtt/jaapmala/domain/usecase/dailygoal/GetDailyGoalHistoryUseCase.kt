@@ -7,10 +7,10 @@ import com.mtt.jaapmala.domain.model.JaapHistory
 import com.mtt.jaapmala.domain.repository.DailyGoalRepository
 import com.mtt.jaapmala.domain.repository.JaapHistoryRepository
 import com.mtt.jaapmala.util.DateUtils.generateDateRange
-import com.mtt.jaapmala.util.DateUtils.getTodayDate
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
+import java.time.LocalDate
 import javax.inject.Inject
 
 class GetDailyGoalHistoryUseCase @Inject constructor(
@@ -59,17 +59,14 @@ private fun buildHistory(
 
     val historyByDate = historyList.associateBy { it.date }
 
-    val startDate = targetHistory
-        .minOf { it.effectiveFrom }
-
-    val endDate = getTodayDate()
+    val today = LocalDate.now()
+    val startDate = today.minusDays(29).toString()
+    val endDate = today.toString()
 
     val dates = generateDateRange(
         startDate = startDate,
         endDate = endDate
     )
-
-    val today = getTodayDate()
 
     return dates
         .sortedDescending()
@@ -93,29 +90,20 @@ private fun buildHistory(
                     ).coerceIn(0f, 1f)
 
             val status = when {
-                date > today -> {
-                    DailyGoalDayStatus.PENDING
-                }
-
-                completedMalas >= targetMalas -> {
+                completedMalas >= targetMalas ->
                     DailyGoalDayStatus.COMPLETED
-                }
 
-                date == today && completedMalas > 0 -> {
+                date == endDate && completedMalas > 0 ->
                     DailyGoalDayStatus.PARTIAL
-                }
 
-                date == today -> {
+                date == endDate ->
                     DailyGoalDayStatus.PENDING
-                }
 
-                completedMalas > 0 -> {
+                completedMalas > 0 ->
                     DailyGoalDayStatus.PARTIAL
-                }
 
-                else -> {
+                else ->
                     DailyGoalDayStatus.MISSED
-                }
             }
 
             DailyGoalDay(

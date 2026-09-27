@@ -32,12 +32,14 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-import com.mtt.jaapmala.data.model.MantraDto
+import com.mtt.jaapmala.R
 import com.mtt.jaapmala.data.mapper.toJaapEntity
+import com.mtt.jaapmala.data.model.MantraDto
 import com.mtt.presentation.ui.screens.Screens
 import com.mtt.presentation.ui.screens.whats_new.AppVersionProvider
 import com.mtt.presentation.ui.screens.whats_new.WhatsNewDialog
@@ -157,7 +159,7 @@ fun Preview() {
         contentAlignment = Alignment.Center
     ) {
         Text(
-            "No mantras yet. \nClick + to add a new mantra",
+            stringResource(R.string.no_mantras_yet_click_to_add_a_new_mantra),
             color = MaterialTheme.colorScheme.onBackground
         )
     }
@@ -180,14 +182,14 @@ fun EmptyView(paddingValues: PaddingValues) {
             )
             Spacer(modifier = Modifier.height(16.dp))
             Text(
-                "No mantras yet",
+                stringResource(R.string.no_mantras_yet),
                 style = MaterialTheme.typography.titleMedium.copy(
                     fontWeight = FontWeight.Bold
                 ),
                 color = MaterialTheme.colorScheme.onBackground
             )
             Text(
-                "Tap the + button to add a new mantra",
+                stringResource(R.string.tap_the_button_to_add_a_new_mantra),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -199,16 +201,16 @@ fun EmptyView(paddingValues: PaddingValues) {
 fun ExitDialog(onIntent: (HomeIntent)-> Unit) {
     AlertDialog(
         onDismissRequest = { onIntent(HomeIntent.DismissExitDialog) },
-        title = { Text("Exit App", fontWeight = FontWeight.Bold) },
-        text = { Text("Are you sure you want to exit Jaap Mala?") },
+        title = { Text(stringResource(R.string.exit_app), fontWeight = FontWeight.Bold) },
+        text = { Text(stringResource(R.string.are_you_sure_you_want_to_exit_jaap_mala)) },
         confirmButton = {
             TextButton(onClick = {
                 onIntent(HomeIntent.ConfirmExit)
-            }) { Text("Yes", color = MaterialTheme.colorScheme.error) }
+            }) { Text(stringResource(R.string.yes), color = MaterialTheme.colorScheme.error) }
         },
         dismissButton = {
             TextButton(onClick = { onIntent(HomeIntent.DismissExitDialog) }) {
-                Text("No", color = MaterialTheme.colorScheme.primary)
+                Text(stringResource(R.string.no), color = MaterialTheme.colorScheme.primary)
             }
         },
         shape = RoundedCornerShape(16.dp)

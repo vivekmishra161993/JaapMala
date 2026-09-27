@@ -96,11 +96,10 @@ object AppModule {
     }
 
     @Provides
-    @Singleton
     fun provideDailyGoalTargetDao(
-        database: JaapDatabase
+        provider: DatabaseProvider
     ): DailyGoalTargetDao {
-        return database.dailyGoalTargetDao()
+        return provider.getDatabase().dailyGoalTargetDao()
     }
     @Provides
     fun provideRepository(dao: JaapDao): JaapRepository {
@@ -112,10 +111,10 @@ object AppModule {
         return GoalRepositoryImpl(dao)
     }
     @Provides
-    fun provideDailyGoalRepository(database: JaapDatabase,
+    fun provideDailyGoalRepository(provider: DatabaseProvider,
                                    dao: DailyGoalDao,
                                    dailyGoalTargetDao: DailyGoalTargetDao): DailyGoalRepository{
-        return DailyGoalRepoImpl(database,dao,dailyGoalTargetDao)
+        return DailyGoalRepoImpl(provider.getDatabase(),dao,dailyGoalTargetDao)
     }
 
     @Provides

@@ -1,5 +1,6 @@
 package com.mtt.jaapmala.data.repository
 
+import android.util.Log
 import androidx.room.withTransaction
 import com.mtt.jaapmala.data.local.dao.DailyGoalDao
 import com.mtt.jaapmala.data.local.dao.DailyGoalTargetDao
@@ -98,29 +99,42 @@ class DailyGoalRepoImpl @Inject constructor(
     ) {
         database.withTransaction {
 
+            Log.d("DailyGoal", "1. Starting: jaapId=$jaapId")
+
             dailyGoalDao
                 .getActiveGoalForJaapOnce(jaapId)
                 ?.let { existingGoal ->
+                    Log.d(
+                        "DailyGoal",
+                        "2. Deactivating existing goal=${existingGoal.id}"
+                    )
+
                     dailyGoalDao.deactivateGoal(existingGoal.id)
                 }
 
+            Log.d("DailyGoal", "3. Inserting daily goal")
+
             val goalId = dailyGoalDao.insert(
                 DailyGoalEntity(
-                    id = 0,
                     jaapId = jaapId,
                     isActive = true
                 )
-            )
+            ).toInt()
+
+            Log.d("DailyGoal", "4. Created daily goal id=$goalId")
+
+            Log.d("DailyGoal", "5. Inserting target")
 
             dailyGoalTargetDao.insert(
                 DailyGoalTargetEntity(
-                    id = 0,
-                    dailyGoalId = goalId.toInt(),
+                    dailyGoalId = goalId,
                     targetMalas = targetMalas,
                     effectiveFrom = effectiveFrom,
                     effectiveTo = null
                 )
             )
+
+            Log.d("DailyGoal", "6. Target inserted successfully")
         }
     }
 

@@ -13,7 +13,9 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.mtt.jaapmala.R
 import com.mtt.presentation.ui.screens.home.HomeIntent
 import com.mtt.presentation.ui.screens.home.HomeViewModel
 import com.mtt.presentation.ui.screens.jaap.JaapDetailIntent
@@ -53,7 +55,7 @@ fun JaapHistoryScreen(
                 .padding(padding),
             contentAlignment = Alignment.Center
         ) {
-            Text("No History Available")
+            Text(stringResource(R.string.no_history_available))
         }
     } else {
         LazyColumn(

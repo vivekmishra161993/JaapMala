@@ -1,7 +1,7 @@
 package com.mtt.jaapmala.domain.usecase.dailygoal
 
 import com.mtt.jaapmala.domain.repository.DailyGoalRepository
-import com.mtt.jaapmala.util.DateUtils.getTodayDate
+import java.time.LocalDate
 import javax.inject.Inject
 
 class CreateDailyGoalUseCase @Inject constructor(
@@ -19,7 +19,7 @@ class CreateDailyGoalUseCase @Inject constructor(
         repository.createDailyGoal(
             jaapId = jaapId,
             targetMalas = targetMalas,
-            effectiveFrom = getTodayDate()
+            effectiveFrom = LocalDate.now().toString()
         )
     }
 }

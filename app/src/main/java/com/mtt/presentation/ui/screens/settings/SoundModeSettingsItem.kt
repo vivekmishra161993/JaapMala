@@ -5,7 +5,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.mtt.jaapmala.R
 
 @Composable
 fun SoundModeSettingsItem(selectedMode: SoundMode, onModeSelected: (SoundMode) -> Unit) {
@@ -17,20 +19,20 @@ fun SoundModeSettingsItem(selectedMode: SoundMode, onModeSelected: (SoundMode) -
     {
 
         SoundModeOption(
-            title = "Off",
-            subtitle = "No sound during chanting",
+            title = stringResource(R.string.off),
+            subtitle = stringResource(R.string.no_sound_during_chanting),
             selected = selectedMode == SoundMode.OFF,
             onClick = { onModeSelected(SoundMode.OFF) }
         )
         SoundModeOption(
-            title = "Mala Completion",
-            subtitle = "Play bell after mala completes",
+            title = stringResource(R.string.mala_completion),
+            subtitle = stringResource(R.string.play_bell_after_mala_completes),
             selected = selectedMode == SoundMode.MALA_COMPLETION,
             onClick = { onModeSelected(SoundMode.MALA_COMPLETION) }
         )
         SoundModeOption(
-            title = "Every Jaap",
-            subtitle = "Play sound on every jaap",
+            title = stringResource(R.string.every_jaap),
+            subtitle = stringResource(R.string.play_sound_on_every_jaap),
             selected = selectedMode == SoundMode.EVERY_COUNT,
             onClick = { onModeSelected(SoundMode.EVERY_COUNT) }
         )

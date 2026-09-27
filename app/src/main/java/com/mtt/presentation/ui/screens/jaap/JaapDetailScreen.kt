@@ -39,6 +39,7 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -47,6 +48,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.navigation.NavController
+import com.mtt.jaapmala.R
 import com.mtt.jaapmala.data.local.entity.JaapEntity
 import com.mtt.jaapmala.util.DateUtils
 import com.mtt.jaapmala.util.formatIndianNumber
@@ -69,6 +71,7 @@ fun JaapDetailScreen(
     val meditationSoundEnabled = state.isMeditationSoundEnabled
     val showManualEntryDialog = state.showManualEntryDialog
     val mantra = state.mantra
+    val shareTitle = stringResource(R.string.share_your_jaap_progress)
 
     val vibrator = remember {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
@@ -144,7 +147,8 @@ fun JaapDetailScreen(
                         putExtra(Intent.EXTRA_TEXT, effect.shareText)
                         type = "text/plain"
                     }
-                    val shareIntent = Intent.createChooser(sendIntent, "Share your Jaap progress")
+                    val shareIntent = Intent.createChooser(sendIntent,
+                        shareTitle)
                     context.startActivity(shareIntent)
                 }
 
@@ -224,7 +228,7 @@ fun JaapDetailScreen(
                 )
         ) {
             Text(
-                text = "Date: ${DateUtils.formatDate(detail.date)}",
+                text = stringResource(R.string.date, DateUtils.formatDate(detail.date)),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onBackground,
                 modifier = Modifier.align(Alignment.CenterHorizontally)
@@ -298,7 +302,7 @@ fun StatsSection(mantra: JaapEntity) {
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
-                "Today",
+                stringResource(R.string.today),
                 fontWeight = FontWeight.SemiBold,
                 color = MaterialTheme.colorScheme.onBackground,
                 fontSize = 16.sp
@@ -310,7 +314,7 @@ fun StatsSection(mantra: JaapEntity) {
             )
             Spacer(modifier = Modifier.height(8.dp))
             Text(
-                "Total",
+                stringResource(R.string.total),
                 fontWeight = FontWeight.SemiBold,
                 color = MaterialTheme.colorScheme.onBackground,
                 fontSize = 16.sp
@@ -326,7 +330,7 @@ fun StatsSection(mantra: JaapEntity) {
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
-                "Today Mala",
+                stringResource(R.string.today_mala),
                 fontWeight = FontWeight.SemiBold,
                 color = MaterialTheme.colorScheme.onBackground,
                 fontSize = 16.sp
@@ -338,7 +342,7 @@ fun StatsSection(mantra: JaapEntity) {
             )
             Spacer(modifier = Modifier.height(8.dp))
             Text(
-                "Lifetime Mala",
+                stringResource(R.string.lifetime_mala),
                 fontWeight = FontWeight.SemiBold,
                 color = MaterialTheme.colorScheme.onBackground,
                 fontSize = 16.sp

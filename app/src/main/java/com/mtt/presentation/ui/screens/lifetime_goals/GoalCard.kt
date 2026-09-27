@@ -36,9 +36,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.mtt.jaapmala.R
 import com.mtt.jaapmala.data.local.entity.GoalStatus
 import com.mtt.jaapmala.util.DateUtils
 import com.mtt.presentation.ui.screens.home.DeleteConfirmationDialog
@@ -65,8 +67,8 @@ fun GoalCard(
 
     if (showDeleteDialog) {
         DeleteConfirmationDialog(
-            title = "Delete Goal",
-            message = "Are you sure you want to delete '${goal.name}'?",
+            title = stringResource(R.string.delete_goal),
+            message = stringResource(R.string.are_you_sure_you_want_to_delete_goal, goal.name),
             onConfirm = {
                 onDeleteGoal()
                 showDeleteDialog = false
@@ -155,7 +157,7 @@ fun GoalCard(
                     Spacer(modifier = Modifier.weight(1f))
 
                     Text(
-                        text = "${(goal.progress * 100).toInt()}% Complete",
+                        text = stringResource(R.string.goal_complete, (goal.progress * 100).toInt()),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
                     )
@@ -168,7 +170,10 @@ fun GoalCard(
                 horizontalArrangement = Arrangement.End
             ) {
                 Text(
-                    text = "End Date: ${DateUtils.formatMillisToDate(goal.endDate)}",
+                    text = stringResource(
+                        R.string.end_date,
+                        DateUtils.formatMillisToDate(goal.endDate)
+                    ),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
                 )
@@ -184,9 +189,9 @@ fun GoalCard(
 private fun StatusBadge(status: GoalStatus) {
 
     val (text, color, icon) = when (status) {
-        GoalStatus.ACTIVE -> Triple("Active", MaterialTheme.colorScheme.primary, Icons.Default.DonutLarge)
-        GoalStatus.SUCCEEDED -> Triple("Succeeded", Color(0xFF388E3C), Icons.Default.CheckCircle)
-        GoalStatus.FAILED -> Triple("Failed", Color(0xFFD32F2F), Icons.Default.Warning)
+        GoalStatus.ACTIVE -> Triple(stringResource(R.string.active), MaterialTheme.colorScheme.primary, Icons.Default.DonutLarge)
+        GoalStatus.SUCCEEDED -> Triple(stringResource(R.string.succeeded), Color(0xFF388E3C), Icons.Default.CheckCircle)
+        GoalStatus.FAILED -> Triple(stringResource(R.string.failed), Color(0xFFD32F2F), Icons.Default.Warning)
     }
 
     val fontScale = LocalDensity.current.fontScale

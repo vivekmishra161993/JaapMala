@@ -17,8 +17,10 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.mtt.jaapmala.R
 
 @Composable
 fun EmptyGoalsScreen(paddingValues: PaddingValues) {
@@ -34,7 +36,7 @@ fun EmptyGoalsScreen(paddingValues: PaddingValues) {
         ) {
             Icon(
                 imageVector = Icons.Filled.EmojiEvents,
-                contentDescription = "No Goals",
+                contentDescription = stringResource(R.string.no_goals),
                 tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f),
                 modifier = Modifier.size(80.dp)
             )
@@ -42,7 +44,7 @@ fun EmptyGoalsScreen(paddingValues: PaddingValues) {
             Spacer(modifier = Modifier.height(16.dp))
 
             Text(
-                text = "No Goals Yet",
+                text = stringResource(R.string.no_goals_yet),
                 style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.9f)
             )
@@ -50,7 +52,7 @@ fun EmptyGoalsScreen(paddingValues: PaddingValues) {
             Spacer(modifier = Modifier.height(8.dp))
 
             Text(
-                text = "Set a new goal to track your Jaap progress over time.",
+                text = stringResource(R.string.set_a_new_goal_to_track_your_jaap_progress_over_time),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
                 textAlign = TextAlign.Center,

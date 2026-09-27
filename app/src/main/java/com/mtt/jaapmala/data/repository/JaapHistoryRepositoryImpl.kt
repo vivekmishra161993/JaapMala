@@ -36,7 +36,7 @@ class JaapHistoryRepositoryImpl(
         jaapId: Int,
         date: String
     ): Flow<JaapHistory?> {
-        return dao.getHistoryForDate(jaapId,date)
+        return dao.getHistoryForDate(jaapId,date).map { it?.toDomain() }
     }
     override fun getHistoryBetweenDates(
         jaapId: Int,

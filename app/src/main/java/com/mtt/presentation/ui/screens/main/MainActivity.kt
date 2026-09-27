@@ -49,9 +49,11 @@ import com.mtt.jaapmala.domain.repository.SettingsRepository
 import com.mtt.jaapmala.util.DateUtils
 import com.mtt.jaapmala.util.GoalType
 import com.mtt.presentation.ui.screens.Screens
+import com.mtt.presentation.ui.screens.add_daily_goals.AddDailyGoalScreen
 import com.mtt.presentation.ui.screens.add_goal.AddGoalScreen
 import com.mtt.presentation.ui.screens.app_bar.TopAppBarWithMenu
 import com.mtt.presentation.ui.screens.app_bar.TopBarAction
+import com.mtt.presentation.ui.screens.daily_goal_history.DailyGoalHistoryScreen
 import com.mtt.presentation.ui.screens.goals.GoalsScreen
 import com.mtt.presentation.ui.screens.history.JaapHistoryScreen
 import com.mtt.presentation.ui.screens.home.AddMantraDialog
@@ -125,7 +127,8 @@ class MainActivity : ComponentActivity() {
                 BottomTabItem.Goals.route,
                 Screens.AddGoalScreen.route,
                 Screens.OnBoardingScreen.route,
-                Screens.Settings.route
+                Screens.Settings.route,
+                Screens.DailyGoalHistoryScreen.route
             )
             val topLevelRoutes = remember {
                 setOf(
@@ -173,6 +176,10 @@ class MainActivity : ComponentActivity() {
 
                     Screens.JaapHistoryScreen.route -> {
                         viewModel.onIntent(HomeIntent.UpdateTopBar("History", emptyList()))
+                    }
+
+                    Screens.AddDailyGoalScreen.route ->{
+                        viewModel.onIntent(HomeIntent.UpdateTopBar("Add Daily Goal",emptyList()))
                     }
                 }
             }
@@ -236,6 +243,8 @@ class MainActivity : ComponentActivity() {
                                         navController.navigate(Screens.AddJaapDialog.route)
                                     } else if (selectedTab == GoalType.LIFETIME.type) {
                                         navController.navigate(Screens.AddGoalScreen.route)
+                                    } else if (selectedTab == GoalType.DAILY.type) {
+                                        navController.navigate(Screens.AddDailyGoalScreen.route)
                                     } else {
                                         navController.navigate(Screens.AddJaapDialog.route)
                                     }
@@ -321,6 +330,9 @@ class MainActivity : ComponentActivity() {
                                 }
                             )
                         }
+                        composable(Screens.AddDailyGoalScreen.route) {
+                            AddDailyGoalScreen(paddingValues = innerPadding,navController)
+                        }
                         composable(
                             Screens.JaapHistoryScreen.route,
                             arguments = listOf(navArgument("jaapId") { type = NavType.IntType })
@@ -353,10 +365,31 @@ class MainActivity : ComponentActivity() {
                                 selectedGoalTab = selectedTab,
                                 onTabSelected = {
                                     selectedTab = it
-                                })
+                                },
+                                navController =navController
+                            )
                         }
                         composable(Screens.AddGoalScreen.route) {
                             AddGoalScreen(paddingValues = innerPadding, navController)
+                        }
+                        composable(
+                            route = Screens.DailyGoalHistoryScreen.route,
+                            arguments = listOf(
+                                navArgument("goalId") {
+                                    type = NavType.IntType
+                                }
+                            )
+                        ) { backStackEntry ->
+
+                            val goalId = backStackEntry
+                                .arguments
+                                ?.getInt("goalId")
+                                ?: return@composable
+
+                            DailyGoalHistoryScreen(
+                                goalId = goalId,
+                                padding = innerPadding
+                            )
                         }
                     }
                 }

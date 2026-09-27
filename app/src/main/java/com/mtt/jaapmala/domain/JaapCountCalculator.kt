@@ -4,30 +4,42 @@ import com.mtt.jaapmala.data.local.entity.JaapEntity
 import javax.inject.Inject
 
 class JaapCountCalculator @Inject constructor() {
-    fun calculateNewCounts(jaap: JaapEntity, addedCount: Int): JaapEntity {
-        // Update total count
-        val newTotalCount = jaap.todayCount + addedCount
 
-        // Calculate the number of full malas completed
-        val newMalaCount = addedCount / jaap.malaSize
+    fun calculateNewCounts(
+        jaap: JaapEntity,
+        addedCount: Int
+    ): JaapEntity {
 
-        // Track UI count that resets on mala completion
-        val newUiCount = if (newTotalCount >= jaap.malaSize) {
-            newTotalCount % jaap.malaSize // Reset the UI count after each mala is completed
-        } else {
-            newTotalCount
-        }
+        val previousTodayCount = jaap.todayCount
+        val newTodayCount = previousTodayCount + addedCount
 
-        // Update lifetime counts
-        val newLifeTimeCount = jaap.lifetimeCount + addedCount
-        val newLifeTimeMalaCount = jaap.lifetimeMalaCount + newMalaCount
+        // Full malas completed before and after this update
+        val previousTodayMalas =
+            previousTodayCount / jaap.malaSize
+
+        val newTodayMalas =
+            newTodayCount / jaap.malaSize
+
+        // Malas completed because of this particular update
+        val completedMalas =
+            newTodayMalas - previousTodayMalas
+
+        val newLifetimeCount =
+            jaap.lifetimeCount + addedCount
+
+        val newLifetimeMalaCount =
+            jaap.lifetimeMalaCount + completedMalas
+
+        // Remaining japs after the last completed mala
+        val newUiCount =
+            newTodayCount % jaap.malaSize
 
         return jaap.copy(
-            todayCount = newTotalCount,
-            todayMalaCount = newTotalCount / jaap.malaSize,  // Number of full malas completed today
-            lifetimeCount = newLifeTimeCount,
-            lifetimeMalaCount = newLifeTimeMalaCount,
-            count = newUiCount  // Remaining count for the current mala
+            todayCount = newTodayCount,
+            todayMalaCount = newTodayMalas,
+            lifetimeCount = newLifetimeCount,
+            lifetimeMalaCount = newLifetimeMalaCount,
+            count = newUiCount
         )
     }
 }

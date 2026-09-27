@@ -26,7 +26,7 @@ interface JaapHistoryDao {
     fun getHistoryForDate(
         jaapId: Int,
         date: String
-    ): Flow<JaapHistory?>
+    ): Flow<JaapHistoryEntity?>
 
     @Query("""
     SELECT * FROM jaap_history

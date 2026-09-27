@@ -12,46 +12,76 @@ import javax.inject.Inject
 class ReminderScheduler @Inject constructor(
     @ApplicationContext private val context: Context
 ) {
+
     fun scheduleReminder(hour: Int, minute: Int) {
-        val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+
+        val alarmManager =
+            context.getSystemService(
+                Context.ALARM_SERVICE
+            ) as AlarmManager
+
         val calendar = Calendar.getInstance().apply {
-            timeInMillis = System.currentTimeMillis()
             set(Calendar.HOUR_OF_DAY, hour)
             set(Calendar.MINUTE, minute)
             set(Calendar.SECOND, 0)
             set(Calendar.MILLISECOND, 0)
+
+            if (timeInMillis <= System.currentTimeMillis()) {
+                add(Calendar.DAY_OF_YEAR, 1)
+            }
         }
 
-        // If the time is in the past, schedule it for the next day
-        if (calendar.timeInMillis <= System.currentTimeMillis()) {
-            calendar.add(Calendar.DAY_OF_YEAR, 1)
+        val intent = Intent(
+            context,
+            ReminderReceiver::class.java
+        ).apply {
+            putExtra(EXTRA_HOUR, hour)
+            putExtra(EXTRA_MINUTE, minute)
         }
 
-        val intent = Intent(context, ReminderReceiver::class.java)
         val pendingIntent = PendingIntent.getBroadcast(
             context,
-            0, // REQUEST_CODE
+            REQUEST_CODE,
             intent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            PendingIntent.FLAG_UPDATE_CURRENT or
+                    PendingIntent.FLAG_IMMUTABLE
         )
 
-        alarmManager.setInexactRepeating( // Use Inexact for battery efficiency
+        alarmManager.set(
             AlarmManager.RTC_WAKEUP,
             calendar.timeInMillis,
-            AlarmManager.INTERVAL_DAY,
             pendingIntent
         )
     }
 
     fun cancelDailyReminder() {
-        val intent = Intent(context, ReminderReceiver::class.java)
-        val pendingIntent = PendingIntent.getBroadcast(
+        val alarmManager =
+            context.getSystemService(
+                Context.ALARM_SERVICE
+            ) as AlarmManager
+
+        alarmManager.cancel(createPendingIntent())
+    }
+
+    private fun createPendingIntent(): PendingIntent {
+        val intent = Intent(
             context,
-            0,
-            intent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            ReminderReceiver::class.java
         )
-        val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
-        alarmManager.cancel(pendingIntent)
+
+        return PendingIntent.getBroadcast(
+            context,
+            REQUEST_CODE,
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or
+                    PendingIntent.FLAG_IMMUTABLE
+        )
+    }
+
+    companion object {
+        private const val REQUEST_CODE = 1001
+
+        const val EXTRA_HOUR = "reminder_hour"
+        const val EXTRA_MINUTE = "reminder_minute"
     }
 }

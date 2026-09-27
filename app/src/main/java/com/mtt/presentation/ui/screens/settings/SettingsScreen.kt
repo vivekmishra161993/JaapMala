@@ -37,12 +37,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.lerp
 import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import com.mtt.jaapmala.R
 import com.mtt.jaapmala.domain.model.ThemeOption
 import com.mtt.jaapmala.util.DateUtils
 import com.mtt.presentation.ui.screens.FontScaledSpacer
@@ -76,7 +78,7 @@ fun SettingsScreen(
         topBar = {
             CenterAlignedTopAppBar(
                 modifier = Modifier.shadow(elevation = 10.dp),
-                title = { Text("Settings") },
+                title = { Text(stringResource(R.string.settings)) },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
                         Icon(
@@ -113,7 +115,7 @@ fun SettingsScreen(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text(
-                    "Daily Reminder",
+                    stringResource(R.string.daily_reminder),
                     style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.onBackground
                 )
@@ -169,7 +171,7 @@ fun SettingsScreen(
                         .padding(vertical = 8.dp)
                 ) {
                     Text(
-                        "Reminder Time",
+                        stringResource(R.string.reminder_time),
                         color = MaterialTheme.colorScheme.onBackground
                     )
                     Spacer(modifier = Modifier.weight(1f))
@@ -185,7 +187,7 @@ fun SettingsScreen(
 
             // Meditation Sound Section
             Text(
-                "Sound & Feedback",
+                stringResource(R.string.sound_feedback),
                 style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.onBackground
             )
@@ -195,7 +197,7 @@ fun SettingsScreen(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text(
-                    "Enable Meditation Sound",
+                    stringResource(R.string.enable_meditation_sound),
                     color = MaterialTheme.colorScheme.onBackground,
                     modifier = Modifier.weight(1f)
                 )
@@ -207,7 +209,7 @@ fun SettingsScreen(
             //Sound
             FontScaledSpacer(startHeight = 8.dp, endHeight = 16.dp)
             Text(
-                "Sound Feedback",
+                stringResource(R.string.sound_feed),
                 color = MaterialTheme.colorScheme.onBackground
             )
             FontScaledSpacer(startHeight = 8.dp, endHeight = 16.dp)
@@ -224,7 +226,7 @@ fun SettingsScreen(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text(
-                    "Haptic Feedback",
+                    stringResource(R.string.haptic_feedback),
                     color = MaterialTheme.colorScheme.onBackground
                 )
                 Spacer(modifier = Modifier.weight(1f))
@@ -245,7 +247,7 @@ fun SettingsScreen(
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Text(
-                        "Vibrate every $hapticFeedbackFrequency jaaps",
+                        stringResource(R.string.vibrate_every_jaaps, hapticFeedbackFrequency),
                         color = MaterialTheme.colorScheme.onBackground
                     )
                 }
@@ -265,7 +267,7 @@ fun SettingsScreen(
 
             // Theme Section
             Text(
-                "Theme",
+                stringResource(R.string.theme),
                 style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.onBackground
             )
@@ -283,7 +285,7 @@ fun SettingsScreen(
                         onClick = { viewModel.updateTheme(option) }
                     )
                     Text(
-                        option.displayName,
+                        stringResource(option.displayNameRes),
                         modifier = Modifier.padding(start = 8.dp),
                         color = MaterialTheme.colorScheme.onBackground
                     )

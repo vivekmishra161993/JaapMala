@@ -23,6 +23,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.mtt.jaapmala.R
@@ -90,7 +91,7 @@ fun HistoryListItem(
                     )
                     Spacer(modifier = Modifier.width(6.dp))
                     Text(
-                        text = "Jaap: ",
+                        text = stringResource(R.string.jaap),
                         style = MaterialTheme.typography.bodyMedium
                     )
                     Text(
@@ -109,7 +110,7 @@ fun HistoryListItem(
                     )
                     Spacer(modifier = Modifier.width(6.dp))
                     Text(
-                        text = "Mala: ",
+                        text = stringResource(R.string.mala),
                         style = MaterialTheme.typography.bodyMedium
                     )
                     Text(

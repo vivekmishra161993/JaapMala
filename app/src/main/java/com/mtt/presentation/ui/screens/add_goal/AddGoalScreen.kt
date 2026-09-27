@@ -37,6 +37,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -45,6 +46,7 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
+import com.mtt.jaapmala.R
 import com.mtt.jaapmala.util.DateUtils
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -87,9 +89,9 @@ fun AddGoalScreen(
                     .fillMaxWidth()
                     .menuAnchor(MenuAnchorType.PrimaryNotEditable, true),
                 readOnly = true,
-                value = uiState.selectedJaapName.ifEmpty { "Select a Jaap" },
+                value = uiState.selectedJaapName.ifEmpty { stringResource(R.string.select_a_jaap) },
                 onValueChange = {},
-                label = { Text("For which Jaap?") },
+                label = { Text(stringResource(R.string.for_which_jaap)) },
                 shape = RoundedCornerShape(12.dp),
                 textStyle = TextStyle(fontSize = 18.sp),
                 trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = isExpanded) }
@@ -117,7 +119,7 @@ fun AddGoalScreen(
         OutlinedTextField(
             value = uiState.goalName,
             onValueChange = viewModel::onGoalNameChange,
-            label = { Text("Goal Name") },
+            label = { Text(stringResource(R.string.goal_name)) },
             singleLine = true,
             isError = uiState.nameError != null,
             supportingText = {
@@ -132,7 +134,7 @@ fun AddGoalScreen(
         OutlinedTextField(
             value = uiState.targetMalas,
             onValueChange = viewModel::onTargetMalasChange,
-            label = { Text("Target Malas") },
+            label = { Text(stringResource(R.string.target_malas)) },
             singleLine = true,
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(12.dp),
@@ -150,7 +152,7 @@ fun AddGoalScreen(
             OutlinedTextField(
                 value = DateUtils.formatMillisToDate(uiState.endDate),
                 onValueChange = {},
-                label = { Text("Target End Date") },
+                label = { Text(stringResource(R.string.target_end_date)) },
                 readOnly = true,
                 enabled = true,
                 isError = uiState.dateError != null,
@@ -212,12 +214,12 @@ fun AddGoalScreen(
                         viewModel.onDateSelected(endDatePickerState.selectedDateMillis)
                         showDatePickerDialog = false
                     }) {
-                        Text("Confirm")
+                        Text(stringResource(R.string.confirm))
                     }
                 },
                 dismissButton = {
                     Button(onClick = { showDatePickerDialog = false }) {
-                        Text("Cancel")
+                        Text(stringResource(R.string.cancel))
                     }
                 }
             )
