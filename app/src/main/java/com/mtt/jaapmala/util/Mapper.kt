@@ -1,6 +1,7 @@
 package com.mtt.jaapmala.util
 
 import com.mtt.jaapmala.data.local.entity.GoalEntity
+import com.mtt.jaapmala.data.local.entity.GoalWithJaapName
 import com.mtt.jaapmala.data.local.entity.JaapEntity
 import com.mtt.jaapmala.data.model.MantraDto
 import com.mtt.presentation.ui.screens.goals.GoalUiModel
@@ -34,18 +35,27 @@ fun MantraDto.toJaapEntity(): JaapEntity {
         malaSize = malaSize
     )
 }
-fun GoalEntity.toUiModel(): GoalUiModel {
+fun GoalWithJaapName.toUiModel(): GoalUiModel {
     return GoalUiModel(
-        name = name,
-        current = currentMalas,
-        target = targetMalas
+        id = goal.id,
+        name = goal.name,
+        current = goal.currentMalas,
+        target = goal.targetMalas,
+        endDate = goal.endDate,
+        status = goal.status,
+        jaapId = goal.jaapId,
+        jaapName = jaapName
     )
 }
-fun GoalUiModel.toEntity(jaapId: Int): GoalEntity {
+fun GoalUiModel.toEntity(): GoalEntity {
     return GoalEntity(
+        id = id,
         jaapId = jaapId,
         name = name,
         targetMalas = target,
-        currentMalas = current
+        currentMalas = current,
+        endDate = endDate,
+        status = status
     )
 }
+

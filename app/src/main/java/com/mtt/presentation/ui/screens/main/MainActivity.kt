@@ -44,6 +44,7 @@ import com.mtt.jaapmala.domain.model.ThemeOption
 import com.mtt.jaapmala.domain.repository.SettingsRepository
 import com.mtt.presentation.ui.screens.Screens
 import com.mtt.presentation.ui.screens.add_goal.AddGoalScreen
+//import com.mtt.presentation.ui.screens.add_goal.AddGoalScreen
 import com.mtt.presentation.ui.screens.app_bar.TopAppBarWithMenu
 import com.mtt.presentation.ui.screens.app_bar.TopBarAction
 import com.mtt.presentation.ui.screens.goals.GoalsScreen
@@ -54,7 +55,6 @@ import com.mtt.presentation.ui.screens.home.HomeViewModel
 import com.mtt.presentation.ui.screens.jaap.JaapDetailScreen
 import com.mtt.presentation.ui.screens.jaap.JaapDetailViewModel
 import com.mtt.presentation.ui.screens.onboarding.OnboardingScreen
-import com.mtt.presentation.ui.screens.progress.ProgressScreen
 import com.mtt.presentation.ui.screens.settings.SettingsScreen
 import com.mtt.presentation.ui.theme.JaapMalaTheme
 import dagger.hilt.android.AndroidEntryPoint
@@ -111,29 +111,30 @@ class MainActivity : ComponentActivity() {
             }
             val tabs = listOf(
                 BottomTabItem.Jaaps,
-                BottomTabItem.Goals,
-                BottomTabItem.Progress
+                BottomTabItem.Goals
             )
             val hideMenuOnRoutes = listOf(
-                BottomTabItem.Progress.route,
                 BottomTabItem.Goals.route,
-                Screens.AddGoalScreen.route
+                Screens.AddGoalScreen.route,
+                Screens.OnBoardingScreen.route,
+                Screens.Settings.route
             )
             val topLevelRoutes = remember {
                 setOf(
                     BottomTabItem.Jaaps.route,
                     BottomTabItem.Goals.route,
-                    BottomTabItem.Progress.route
+                    Screens.OnBoardingScreen.route,
+                    Screens.AddJaapDialog.route
                 )
             }
-            val shouldShowBackButton = currentDestination !in topLevelRoutes && currentDestination != null
+            val shouldShowBackButton =
+                currentDestination !in topLevelRoutes && currentDestination != null
             val topBarState by viewModel.topBarState.collectAsState()
             var toolbarTitle by remember { mutableStateOf("Jaap Mala") }
             toolbarTitle = when (currentDestination) {
                 Screens.HomeScreen.route,
                 BottomTabItem.Jaaps.route -> "Jaap Mala"
 
-                BottomTabItem.Progress.route -> "Progress"
                 BottomTabItem.Goals.route -> "Goals"
                 Screens.Settings.route -> "Settings"
                 Screens.AddGoalScreen.route -> "Add Goal"
@@ -143,10 +144,12 @@ class MainActivity : ComponentActivity() {
             LaunchedEffect(Unit) {
                 viewModel.topBarEvent.collect { action ->
                     when (action) {
-                        is TopBarAction.Backup -> { /*onBackupClick()*/
+                        is TopBarAction.Backup -> {
+                            backupManager.backupDatabase()
                         }
 
-                        is TopBarAction.Restore -> {/*onRestoreClick()*/
+                        is TopBarAction.Restore -> {
+                            backupManager.restoreDatabase()
                         }
 
                         is TopBarAction.Settings -> {
@@ -165,20 +168,21 @@ class MainActivity : ComponentActivity() {
                     topBar = {
                         TopAppBarWithMenu(
                             topBarState,
-                            showBackButton= shouldShowBackButton,
+                            showBackButton = shouldShowBackButton,
                             onBack = { navController.navigateUp() },
-                            onActionSelected = viewModel::onTopBarAction,
+                            onActionSelected = { action ->
+                                viewModel.onTopBarAction(action, this@MainActivity)
+                            },
                             showOverFlowMenu = currentDestination !in hideMenuOnRoutes
                         )
                     },
                     bottomBar = {
                         if (navController.currentDestination?.route == BottomTabItem.Jaaps.route
                             || navController.currentDestination?.route == BottomTabItem.Goals.route
-                            || navController.currentDestination?.route == BottomTabItem.Progress.route
                         ) {
                             AnimatedBottomBar(tabs, currentDestination, onTabSelected = { tab ->
                                 navController.navigate(tab.route) {
-                                    popUpTo(navController.graph.findStartDestination().id){
+                                    popUpTo(navController.graph.findStartDestination().id) {
                                         saveState = true
                                     }
                                     launchSingleTop = true
@@ -220,7 +224,7 @@ class MainActivity : ComponentActivity() {
                                 onFinish = {
                                     BackupPrefs.setOnboardingShown(context)
                                     navController.popBackStack()
-                                    navController.navigate(Screens.HomeScreen.route)
+                                    navController.navigate(BottomTabItem.Jaaps.route)
                                 }
                             )
                         }
@@ -259,9 +263,12 @@ class MainActivity : ComponentActivity() {
                             )
                         ) { backStackEntry ->
                             val jaapId = backStackEntry.arguments?.getInt("jaapId") ?: -1
-                            JaapDetailScreen(jaapId = jaapId, navController, setTitle = { title ->
-                                toolbarTitle = title
-                            })
+                            JaapDetailScreen(
+                                jaapId = jaapId, navController, setTitle = { title ->
+                                    toolbarTitle = title
+                                }, padding = innerPadding,
+                                homeViewModel = viewModel
+                            )
                         }
                         composable(Screens.AddJaapDialog.route) {
                             AddMantraDialog(
@@ -277,11 +284,11 @@ class MainActivity : ComponentActivity() {
                             arguments = listOf(navArgument("jaapId") { type = NavType.IntType })
                         ) { backStackEntry ->
 
-                            val viewModel: JaapDetailViewModel = hiltViewModel()
+                            val detailViewModel: JaapDetailViewModel = hiltViewModel()
                             val jaapId = backStackEntry.arguments?.getInt("jaapId") ?: -1
                             JaapHistoryScreen(
                                 jaapId,
-                                viewModel = viewModel,
+                                viewModel = detailViewModel,
                                 onBack = { navController.popBackStack() }
                             )
                         }
@@ -296,9 +303,7 @@ class MainActivity : ComponentActivity() {
                                 innerPadding
                             )
                         }
-                        composable(BottomTabItem.Progress.route) {
-                            ProgressScreen(paddingValues = innerPadding)
-                        }
+
                         composable(BottomTabItem.Goals.route) {
                             GoalsScreen(paddingValues = innerPadding)
                         }

@@ -1,5 +1,5 @@
 [versions]
-agp = "8.12.1"
+agp = "8.12.3"
 kotlin = "1.9.22"
 coreKtx = "1.15.0"
 junit = "4.13.2"
@@ -7,7 +7,7 @@ junitVersion = "1.2.1"
 espressoCore = "3.6.1"
 lifecycleRuntimeKtx = "2.7.0"
 activityCompose = "1.10.1"
-composeBom = "2023.08.00"
+composeBom = "2024.10.00"
 hilt = "2.51"
 room = "2.6.1"
 androidx-hilt = "1.2.0"
@@ -27,6 +27,7 @@ icon_extended = "1.5.0"
 compose_charts="0.2.4"
 animation ="1.7.0"
 nav_compose ="2.8.0"
+uiTooling = "1.10.0"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -53,7 +54,6 @@ room-compiler = { group = "androidx.room", name = "room-compiler", version.ref =
 androidx-material3-android = { group = "androidx.compose.material3", name = "material3-android", version.ref = "material3Android" }
 dataStore ={group ="androidx.datastore", name="datastore-preferences",version.ref="dataStore"}
 material-icon-extended ={group ="androidx.compose.material",name="material-icons-extended",version.ref="icon_extended"}
-charts ={group="io.github.bytebeats",name="compose-charts",version.ref="compose_charts"}
 # Unit Testing
 truth = { module = "com.google.truth:truth", version.ref = "truth" }
 mockk = { module = "io.mockk:mockk", version.ref = "mockk" }
@@ -64,6 +64,7 @@ androidx-junit = { module = "androidx.test.ext:junit", version.ref = "androidx-j
 
 # Lifecycle
 lifecycle-runtime-testing = { module = "androidx.lifecycle:lifecycle-runtime-testing", version.ref = "lifecycle-runtime-testing" }
+ui-tooling = { group = "androidx.compose.ui", name = "ui-tooling", version.ref = "uiTooling" }
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }

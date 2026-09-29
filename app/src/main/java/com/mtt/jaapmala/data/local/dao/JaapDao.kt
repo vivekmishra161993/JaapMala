@@ -30,4 +30,7 @@ interface JaapDao {
 
     @Query("UPDATE jaaps SET name = :newName WHERE id = :jaapId")
     suspend fun updateJaapName(jaapId: Int, newName: String)
+
+    @Query("SELECT * FROM jaaps WHERE id = :jaapId LIMIT 1")
+    suspend fun getById(jaapId: Int): JaapEntity?
 }

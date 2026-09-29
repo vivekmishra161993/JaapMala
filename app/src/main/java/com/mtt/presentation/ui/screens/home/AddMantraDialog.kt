@@ -3,8 +3,10 @@ package com.mtt.presentation.ui.screens.home
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
@@ -20,6 +22,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -104,13 +107,11 @@ fun AddMantraDialog(
                 // Row for Cancel and Submit Buttons
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
+                    horizontalArrangement = Arrangement.End,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
                     TextButton(
                         onClick = { onDismiss() },
-                        modifier = Modifier
-                            .padding(end = 8.dp)
-                            .weight(1f)
                     ) {
                         Text(
                             "Cancel",
@@ -120,7 +121,7 @@ fun AddMantraDialog(
                             )
                         )
                     }
-
+                    Spacer(modifier = Modifier.width(8.dp))
                     Button(
                         onClick = {
                             if (name.isNotBlank() && malaSize.isNotBlank()) {
@@ -130,9 +131,7 @@ fun AddMantraDialog(
                             }
                         },
                         shape = RoundedCornerShape(12.dp),
-                        modifier = Modifier
-                            .padding(start = 8.dp)
-                            .weight(1f),
+
                         colors = ButtonDefaults.buttonColors(
                             containerColor = MaterialTheme.colorScheme.primary
                         )
@@ -141,7 +140,8 @@ fun AddMantraDialog(
                             "Submit",
                             style = MaterialTheme.typography.bodyLarge.copy(
                                 fontWeight = FontWeight.SemiBold
-                            )
+                            ),
+                            softWrap = false
                         )
                     }
                 }

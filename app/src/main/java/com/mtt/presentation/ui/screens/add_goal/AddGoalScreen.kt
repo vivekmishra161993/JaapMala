@@ -2,6 +2,7 @@ package com.mtt.presentation.ui.screens.add_goal
 
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -11,6 +12,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DatePicker
@@ -20,16 +23,15 @@ import androidx.compose.material3.ElevatedButton
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.MenuAnchorType
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.SelectableDates
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -52,24 +54,20 @@ fun AddGoalScreen(
     navController: NavController, // For navigating back
     viewModel: AddGoalViewModel = hiltViewModel<AddGoalViewModel>()
 ) {
-    var name by remember { mutableStateOf("") }
-    var targetMalas by remember { mutableStateOf("") }
+
     var isExpanded by remember { mutableStateOf(false) }
-    var selectedJaap by remember { mutableStateOf("") }
-    var selectedJaapId by remember { mutableIntStateOf(0) }
     val mantras by viewModel.mantra.collectAsStateWithLifecycle()
-// --- 1. State for the Date Picker ---
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+
     val endDatePickerState = rememberDatePickerState(
-        // By default, you can prevent selection of past dates
+        initialSelectedDateMillis = uiState.endDate,
         selectableDates = object : SelectableDates {
             override fun isSelectableDate(utcTimeMillis: Long): Boolean {
-                return utcTimeMillis >= System.currentTimeMillis() - 86400000 // Allow today
+                return utcTimeMillis >= System.currentTimeMillis() - 86400000
             }
         }
     )
     var showDatePickerDialog by remember { mutableStateOf(false) }
-    var selectedDate by remember { mutableStateOf("") }
-
 
     Column(
         modifier = Modifier
@@ -89,7 +87,7 @@ fun AddGoalScreen(
                     .fillMaxWidth()
                     .menuAnchor(MenuAnchorType.PrimaryNotEditable, true),
                 readOnly = true,
-                value = selectedJaap.ifEmpty { "Select a Jaap" },
+                value = uiState.selectedJaapName.ifEmpty { "Select a Jaap" },
                 onValueChange = {},
                 label = { Text("For which Jaap?") },
                 shape = RoundedCornerShape(12.dp),
@@ -105,21 +103,26 @@ fun AddGoalScreen(
                     DropdownMenuItem(
                         text = { Text(mantra.name) },
                         onClick = {
-                            selectedJaapId = mantra.id
-                            selectedJaap = mantra.name
+                            viewModel.onJaapSelected(mantra.id, mantra.name)
                             isExpanded = false
                         }
                     )
                 }
             }
         }
-
+        uiState.jaapError?.let {
+            Text(it, color = MaterialTheme.colorScheme.error)
+        }
         // Text field for Goal Name
         OutlinedTextField(
-            value = name,
-            onValueChange = { name = it },
+            value = uiState.goalName,
+            onValueChange = viewModel::onGoalNameChange,
             label = { Text("Goal Name") },
             singleLine = true,
+            isError = uiState.nameError != null,
+            supportingText = {
+                uiState.nameError?.let { Text(it) }
+            },
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(12.dp),
             textStyle = TextStyle(fontSize = 18.sp)
@@ -127,41 +130,64 @@ fun AddGoalScreen(
 
         // Text field for Target Malas
         OutlinedTextField(
-            value = targetMalas,
-            onValueChange = { targetMalas = it },
+            value = uiState.targetMalas,
+            onValueChange = viewModel::onTargetMalasChange,
             label = { Text("Target Malas") },
             singleLine = true,
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(12.dp),
             textStyle = TextStyle(fontSize = 18.sp),
+            isError = uiState.targetMalasError != null,
+            supportingText = {
+                uiState.targetMalasError?.let { Text(it) }
+            },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
         )
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .clickable {
-                    showDatePickerDialog = true
-                }) {
+        ) {
             OutlinedTextField(
-                value = selectedDate,
+                value = DateUtils.formatMillisToDate(uiState.endDate),
                 onValueChange = {},
                 label = { Text("Target End Date") },
-                enabled = false,
+                readOnly = true,
+                enabled = true,
+                isError = uiState.dateError != null,
+                modifier = Modifier.fillMaxWidth(),
+                trailingIcon = {
+                    Icon(
+                        imageVector = Icons.Default.DateRange,
+                        contentDescription = "Pick date"
+                    )
+                },
+                supportingText = {
+                    uiState.dateError?.let {
+                        Text(it, color = MaterialTheme.colorScheme.error)
+                    }
+                }
+            )
+
+            // ✅ THIS captures clicks reliably
+            Box(
                 modifier = Modifier
-                    .fillMaxWidth(),
-                shape = RoundedCornerShape(12.dp),
-                textStyle = TextStyle(fontSize = 18.sp),
-                colors = OutlinedTextFieldDefaults.colors( // Customize colors for disabled state
-                    disabledTextColor = MaterialTheme.colorScheme.onSurface,
-                    disabledLabelColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                    disabledBorderColor = MaterialTheme.colorScheme.outline,
-                    disabledLeadingIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                    disabledTrailingIconColor = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+                    .matchParentSize()
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null // no ripple on top
+                    ) {
+                        showDatePickerDialog = true
+                    }
             )
         }
+
+
         ElevatedButton(
+            enabled = uiState.isFormValid,
             onClick = {
+                viewModel.submitGoal {
+                    navController.popBackStack()
+                }
             },
             shape = RoundedCornerShape(12.dp),
             modifier = Modifier
@@ -183,9 +209,7 @@ fun AddGoalScreen(
                 onDismissRequest = { showDatePickerDialog = false },
                 confirmButton = {
                     Button(onClick = {
-                        selectedDate = endDatePickerState.selectedDateMillis?.let {
-                            DateUtils.formatMillisToDate(it)
-                        } ?: ""
+                        viewModel.onDateSelected(endDatePickerState.selectedDateMillis)
                         showDatePickerDialog = false
                     }) {
                         Text("Confirm")
@@ -203,5 +227,7 @@ fun AddGoalScreen(
         }
 
     }
+
 }
+
 

@@ -42,5 +42,10 @@ object DateUtils {
             ""
         }
     }
+     fun getTodayDate(): String {
+        val today = LocalDate.now()
+        val formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy")
+        return today.format(formatter)
+    }
 
 }
