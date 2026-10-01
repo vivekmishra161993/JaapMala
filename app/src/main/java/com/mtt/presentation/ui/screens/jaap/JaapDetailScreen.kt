@@ -8,6 +8,7 @@ import android.os.Build
 import android.os.VibrationEffect
 import android.os.Vibrator
 import android.os.VibratorManager
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -21,11 +22,16 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -34,16 +40,14 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
@@ -52,7 +56,6 @@ import com.mtt.jaapmala.R
 import com.mtt.jaapmala.data.local.entity.JaapEntity
 import com.mtt.jaapmala.util.DateUtils
 import com.mtt.jaapmala.util.formatIndianNumber
-import com.mtt.presentation.ui.screens.FontScaledSpacer
 import com.mtt.presentation.ui.screens.Screens
 import com.mtt.presentation.ui.screens.app_bar.TopBarAction
 import com.mtt.presentation.ui.screens.home.HomeIntent
@@ -68,9 +71,11 @@ fun JaapDetailScreen(
     val viewModel: JaapDetailViewModel = hiltViewModel()
     val context = LocalContext.current
     val state by viewModel.state.collectAsState()
+
     val meditationSoundEnabled = state.isMeditationSoundEnabled
     val showManualEntryDialog = state.showManualEntryDialog
     val mantra = state.mantra
+
     val shareTitle = stringResource(R.string.share_your_jaap_progress)
 
     val vibrator = remember {
@@ -78,37 +83,55 @@ fun JaapDetailScreen(
             val manager = context.getSystemService(
                 Context.VIBRATOR_MANAGER_SERVICE
             ) as VibratorManager
+
             manager.defaultVibrator
         } else {
             @Suppress("DEPRECATION")
-            context.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
+            context.getSystemService(
+                Context.VIBRATOR_SERVICE
+            ) as Vibrator
         }
     }
-    //Meditation Sound
+
+    // -------------------------------------------------------------
+    // Meditation Sound
+    // -------------------------------------------------------------
+
     LifeCycleAwareSound(viewModel)
-    val lifeCycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
+
+    val lifeCycleOwner =
+        androidx.lifecycle.compose.LocalLifecycleOwner.current
 
     DisposableEffect(lifeCycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
             when (event) {
                 Lifecycle.Event.ON_START -> {
-                    viewModel.onIntent(JaapDetailIntent.OnAppForegrounded)
+                    viewModel.onIntent(
+                        JaapDetailIntent.OnAppForegrounded
+                    )
                 }
 
                 Lifecycle.Event.ON_STOP -> {
-                    viewModel.onIntent(JaapDetailIntent.OnAppBackgrounded)
+                    viewModel.onIntent(
+                        JaapDetailIntent.OnAppBackgrounded
+                    )
                 }
 
                 else -> Unit
             }
         }
-        lifeCycleOwner.lifecycle.addObserver(
-            observer
-        )
+
+        lifeCycleOwner.lifecycle.addObserver(observer)
+
         onDispose {
             lifeCycleOwner.lifecycle.removeObserver(observer)
         }
     }
+
+    // -------------------------------------------------------------
+    // Save today's history when leaving the screen
+    // -------------------------------------------------------------
+
     DisposableEffect(Unit) {
         onDispose {
             viewModel.saveHistoryForToday()
@@ -116,17 +139,36 @@ fun JaapDetailScreen(
         }
     }
 
+    // -------------------------------------------------------------
+    // Load mantra
+    // -------------------------------------------------------------
+
     LaunchedEffect(jaapId) {
-        viewModel.onIntent(JaapDetailIntent.LoadMantra(jaapId))
+        viewModel.onIntent(
+            JaapDetailIntent.LoadMantra(jaapId)
+        )
     }
+
+    // -------------------------------------------------------------
+    // Register top bar actions
+    // -------------------------------------------------------------
+
     LaunchedEffect(viewModel) {
         homeViewModel.registerCustomActionHandler { action, _ ->
-            viewModel.onIntent(JaapDetailIntent.OnTopBarAction(action))
+            viewModel.onIntent(
+                JaapDetailIntent.OnTopBarAction(action)
+            )
         }
     }
+
+    // -------------------------------------------------------------
+    // Effects
+    // -------------------------------------------------------------
+
     LaunchedEffect(viewModel) {
         viewModel.effect.collect { effect ->
             when (effect) {
+
                 JaapDetailEffect.TriggerHaptic -> {
                     if (vibrator.hasVibrator()) {
                         vibrator.vibrate(
@@ -139,35 +181,70 @@ fun JaapDetailScreen(
                 }
 
                 is JaapDetailEffect.NavigateToHistory -> {
-                    navController.navigate(Screens.JaapHistoryScreen.passJaapId(effect.jaapId))
+                    navController.navigate(
+                        Screens.JaapHistoryScreen.passJaapId(
+                            effect.jaapId
+                        )
+                    )
                 }
 
                 is JaapDetailEffect.ShareText -> {
                     val sendIntent = Intent(Intent.ACTION_SEND).apply {
-                        putExtra(Intent.EXTRA_TEXT, effect.shareText)
+                        putExtra(
+                            Intent.EXTRA_TEXT,
+                            effect.shareText
+                        )
                         type = "text/plain"
                     }
-                    val shareIntent = Intent.createChooser(sendIntent,
-                        shareTitle)
+
+                    val shareIntent = Intent.createChooser(
+                        sendIntent,
+                        shareTitle
+                    )
+
                     context.startActivity(shareIntent)
                 }
 
-                is JaapDetailEffect.NavigateBack -> {
+                JaapDetailEffect.NavigateBack -> {
                     navController.popBackStack()
+                }
+
+                is JaapDetailEffect.NavigateToInsights -> {
+                    navController.navigate(
+                        Screens.PracticeInsightsScreen.passJaapId(
+                            effect.jaapId
+                        )
+                    )
                 }
             }
         }
     }
 
-    // --- Meditation Sound Handling with Screen Lock/Unlock ---
+    // -------------------------------------------------------------
+    // Screen lock / unlock handling
+    // -------------------------------------------------------------
+
     val screenReceiver = remember {
         object : BroadcastReceiver() {
-            override fun onReceive(context: Context?, intent: Intent?) {
+
+            override fun onReceive(
+                context: Context?,
+                intent: Intent?
+            ) {
                 when (intent?.action) {
-                    Intent.ACTION_SCREEN_OFF -> viewModel.onIntent(JaapDetailIntent.OnAppBackgrounded)
+
+                    Intent.ACTION_SCREEN_OFF -> {
+                        viewModel.onIntent(
+                            JaapDetailIntent.OnAppBackgrounded
+                        )
+                    }
+
                     Intent.ACTION_USER_PRESENT -> {
-                        if (meditationSoundEnabled)
-                            viewModel.onIntent(JaapDetailIntent.OnAppForegrounded)
+                        if (meditationSoundEnabled) {
+                            viewModel.onIntent(
+                                JaapDetailIntent.OnAppForegrounded
+                            )
+                        }
                     }
                 }
             }
@@ -179,32 +256,59 @@ fun JaapDetailScreen(
             addAction(Intent.ACTION_SCREEN_OFF)
             addAction(Intent.ACTION_USER_PRESENT)
         }
-        context.registerReceiver(screenReceiver, filter)
 
-        // Also handle normal composable dispose
+        context.registerReceiver(
+            screenReceiver,
+            filter
+        )
+
         onDispose {
             context.unregisterReceiver(screenReceiver)
-            viewModel.onIntent(JaapDetailIntent.OnAppBackgrounded)
+
+            viewModel.onIntent(
+                JaapDetailIntent.OnAppBackgrounded
+            )
         }
     }
+
     DisposableEffect(Unit) {
         onDispose {
             homeViewModel.unregisterCustomActionHandler()
         }
     }
 
-    // Show dialog
+    // -------------------------------------------------------------
+    // Manual entry dialog
+    // -------------------------------------------------------------
+
     if (showManualEntryDialog) {
         ManualJaapEntryDialog(
             onSubmit = { enteredCount ->
-                viewModel.onIntent(JaapDetailIntent.DismissManualEntryDialog)
-                viewModel.onIntent(JaapDetailIntent.SubmitManualEntry(jaapId, enteredCount))
+                viewModel.onIntent(
+                    JaapDetailIntent.DismissManualEntryDialog
+                )
+
+                viewModel.onIntent(
+                    JaapDetailIntent.SubmitManualEntry(
+                        jaapId,
+                        enteredCount
+                    )
+                )
             },
-            onDismiss = { viewModel.onIntent(JaapDetailIntent.DismissManualEntryDialog) }
+            onDismiss = {
+                viewModel.onIntent(
+                    JaapDetailIntent.DismissManualEntryDialog
+                )
+            }
         )
     }
 
+    // -------------------------------------------------------------
+    // Content
+    // -------------------------------------------------------------
+
     mantra?.let { detail ->
+
         LaunchedEffect(detail.name) {
             homeViewModel.onIntent(
                 HomeIntent.UpdateTopBar(
@@ -212,185 +316,419 @@ fun JaapDetailScreen(
                     actions = listOf(
                         TopBarAction.IncrementCount,
                         TopBarAction.History,
+                        TopBarAction.PracticeInsights,
                         TopBarAction.Share
                     )
                 )
             )
         }
+
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(
                     start = 16.dp,
-                    bottom = padding.calculateBottomPadding(),
                     end = 16.dp,
-                    top = padding.calculateTopPadding() + 20.dp
+                    top = padding.calculateTopPadding() + 12.dp,
+                    bottom = padding.calculateBottomPadding()
                 )
         ) {
+
+            // ---------------------------------------------------------
+            // Date
+            // ---------------------------------------------------------
+
             Text(
-                text = stringResource(R.string.date, DateUtils.formatDate(detail.date)),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onBackground,
-                modifier = Modifier.align(Alignment.CenterHorizontally)
+                text = stringResource(
+                    R.string.date,
+                    DateUtils.formatDate(detail.date)
+                ),
+                style = MaterialTheme.typography.labelLarge,
+                fontWeight = FontWeight.Medium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.align(
+                    Alignment.CenterHorizontally
+                )
             )
 
-            FontScaledSpacer(startHeight = 24.dp, endHeight = 32.dp)
-            StatsSection(detail)
-            Spacer(modifier = Modifier.height(36.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
-            val fontScale = LocalDensity.current.fontScale
-            val buttonSize = (100 * fontScale).dp.coerceIn(100.dp, 140.dp)
+            // ---------------------------------------------------------
+            // Stats
+            // ---------------------------------------------------------
+
+            StatsSection(detail)
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // ---------------------------------------------------------
+            // Undo
+            // ---------------------------------------------------------
 
             Button(
-                onClick = { viewModel.onIntent(JaapDetailIntent.DecreaseCount) },
-                shape = CircleShape,
+                onClick = {
+                    viewModel.onIntent(
+                        JaapDetailIntent.DecreaseCount
+                    )
+                },
+                shape = RoundedCornerShape(50),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor =
+                        MaterialTheme.colorScheme.surfaceVariant,
+                    contentColor =
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                ),
+                elevation = ButtonDefaults.buttonElevation(
+                    defaultElevation = 0.dp
+                ),
                 modifier = Modifier
                     .align(Alignment.CenterHorizontally)
-                    .size(buttonSize)
+                    .height(42.dp)
             ) {
                 Text(
                     text = "Undo",
-                    maxLines = 1,
-                    softWrap = false
+                    style = MaterialTheme.typography.labelLarge,
+                    fontWeight = FontWeight.SemiBold
                 )
             }
 
+            Spacer(modifier = Modifier.height(12.dp))
 
-            Spacer(modifier = Modifier.height(24.dp))
+            // ---------------------------------------------------------
+            // Counting area
+            // ---------------------------------------------------------
 
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f)
                     .clickable(
-                        interactionSource = remember { MutableInteractionSource() },
+                        interactionSource = remember {
+                            MutableInteractionSource()
+                        },
                         indication = null
-                    ) { viewModel.onIntent(JaapDetailIntent.IncreaseCount) },
+                    ) {
+                        viewModel.onIntent(
+                            JaapDetailIntent.IncreaseCount
+                        )
+                    },
                 contentAlignment = Alignment.Center
             ) {
                 ProgressCountButton(
                     currentCount = detail.count,
-                    onClick = { viewModel.onIntent(JaapDetailIntent.IncreaseCount) },
+                    onClick = {
+                        viewModel.onIntent(
+                            JaapDetailIntent.IncreaseCount
+                        )
+                    },
                     malaSize = detail.malaSize
                 )
             }
         }
 
     } ?: run {
+
         Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .clickable(
-                    interactionSource = remember { MutableInteractionSource() },
-                    indication = null
-                ) {},
-            contentAlignment = Alignment.Center,
-        ) { CircularProgressIndicator() }
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
+        ) {
+            CircularProgressIndicator(
+                color = MaterialTheme.colorScheme.primary
+            )
+        }
     }
 }
 
 
 @Composable
-fun StatsSection(mantra: JaapEntity) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(top = 10.dp)
+fun StatsSection(
+    mantra: JaapEntity
+) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(20.dp),
+        color = MaterialTheme.colorScheme.surfaceVariant,
+        border = BorderStroke(
+            width = 1.dp,
+            color = MaterialTheme.colorScheme.outlineVariant
+        )
     ) {
         Column(
-            modifier = Modifier.weight(1f),
-            horizontalAlignment = Alignment.CenterHorizontally
+            modifier = Modifier.padding(
+                horizontal = 16.dp,
+                vertical = 14.dp
+            )
         ) {
+
+            // ---------------------------------------------------------
+            // Today
+            // ---------------------------------------------------------
+
             Text(
-                stringResource(R.string.today),
+                text = stringResource(R.string.today),
+                style = MaterialTheme.typography.labelLarge,
                 fontWeight = FontWeight.SemiBold,
-                color = MaterialTheme.colorScheme.onBackground,
-                fontSize = 16.sp
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.align(
+                    Alignment.CenterHorizontally
+                )
             )
+
+            Spacer(modifier = Modifier.height(10.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+
+                DetailStat(
+                    value = formatIndianNumber(
+                        mantra.todayCount
+                    ),
+                    modifier = Modifier.weight(1f)
+                )
+
+                VerticalDivider(
+                    modifier = Modifier.height(42.dp),
+                    color = MaterialTheme.colorScheme.outlineVariant
+                )
+
+                DetailStat(
+                    value = formatIndianNumber(
+                        mantra.todayMalaCount
+                    ),
+                    modifier = Modifier.weight(1f)
+                )
+            }
+
+            Spacer(modifier = Modifier.height(4.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "${mantra.malaSize}×",
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = FontWeight.Medium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.weight(1f),
+                    textAlign = TextAlign.Center
+                )
+
+                Spacer(
+                    modifier = Modifier.width(1.dp)
+                )
+
+                Text(
+                    text = "Malas",
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = FontWeight.Medium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.weight(1f),
+                    textAlign = TextAlign.Center
+                )
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            HorizontalDivider(
+                color = MaterialTheme.colorScheme.outlineVariant
+            )
+
+            Spacer(modifier = Modifier.height(14.dp))
+
+            // ---------------------------------------------------------
+            // Lifetime
+            // ---------------------------------------------------------
+
             Text(
-                formatIndianNumber(mantra.todayCount),
-                color = MaterialTheme.colorScheme.onBackground,
-                fontSize = 20.sp
+                text = "Lifetime",
+                style = MaterialTheme.typography.labelMedium,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.align(
+                    Alignment.CenterHorizontally
+                )
             )
+
             Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                stringResource(R.string.total),
-                fontWeight = FontWeight.SemiBold,
-                color = MaterialTheme.colorScheme.onBackground,
-                fontSize = 16.sp
-            )
-            Text(
-                formatIndianNumber(mantra.lifetimeCount),
-                color = MaterialTheme.colorScheme.onBackground,
-                fontSize = 20.sp
-            )
-        }
-        Column(
-            modifier = Modifier.weight(1f),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Text(
-                stringResource(R.string.today_mala),
-                fontWeight = FontWeight.SemiBold,
-                color = MaterialTheme.colorScheme.onBackground,
-                fontSize = 16.sp
-            )
-            Text(
-                "${mantra.todayMalaCount}",
-                color = MaterialTheme.colorScheme.onBackground,
-                fontSize = 20.sp
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                stringResource(R.string.lifetime_mala),
-                fontWeight = FontWeight.SemiBold,
-                color = MaterialTheme.colorScheme.onBackground,
-                fontSize = 16.sp
-            )
-            Text(
-                formatIndianNumber(mantra.lifetimeMalaCount),
-                color = MaterialTheme.colorScheme.onBackground,
-                fontSize = 20.sp
-            )
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+
+                DetailLifetimeStat(
+                    title = stringResource(R.string.total),
+                    value = formatIndianNumber(
+                        mantra.lifetimeCount
+                    ),
+                    modifier = Modifier.weight(1f)
+                )
+
+                VerticalDivider(
+                    modifier = Modifier.height(34.dp),
+                    color = MaterialTheme.colorScheme.outlineVariant
+                )
+
+                DetailLifetimeStat(
+                    title = stringResource(
+                        R.string.total_x,
+                        mantra.malaSize
+                    ),
+                    value = formatIndianNumber(
+                        mantra.lifetimeMalaCount
+                    ),
+                    modifier = Modifier.weight(1f)
+                )
+            }
         }
     }
 }
 
 @Composable
-fun ProgressCountButton(currentCount: Int, onClick: () -> Unit, malaSize: Int) {
-    var progress = 0f
-    if (malaSize != 0) {
-        progress = (currentCount % malaSize).toFloat() / malaSize.toFloat()
+fun ProgressCountButton(
+    currentCount: Int,
+    onClick: () -> Unit,
+    malaSize: Int
+) {
+    val progress = remember(
+        currentCount,
+        malaSize
+    ) {
+        if (malaSize > 0) {
+            (currentCount % malaSize).toFloat() /
+                    malaSize.toFloat()
+        } else {
+            0f
+        }
     }
+
+    val currentMalaCount =
+        if (malaSize > 0) {
+            currentCount % malaSize
+        } else {
+            0
+        }
+
+    val progressColor =
+        MaterialTheme.colorScheme.primary
+
+    val trackColor =
+        MaterialTheme.colorScheme.surfaceVariant
 
     Box(
         modifier = Modifier
             .size(280.dp)
-            .clickable { onClick() },
+            .clickable(
+                indication = null,
+                interactionSource = remember {
+                    MutableInteractionSource()
+                },
+                onClick = onClick
+            ),
         contentAlignment = Alignment.Center
     ) {
-        Canvas(modifier = Modifier.fillMaxSize()) {
+
+        Canvas(
+            modifier = Modifier.fillMaxSize()
+        ) {
+
+            // Background ring
             drawCircle(
-                color = Color.LightGray,
-                style = Stroke(width = 20f)
+                color = trackColor,
+                style = Stroke(
+                    width = 18.dp.toPx()
+                )
             )
+
+            // Progress ring
             drawArc(
-                color = Color(0xFF4CAF50),
+                color = progressColor,
                 startAngle = -90f,
                 sweepAngle = 360f * progress,
                 useCenter = false,
-                style = Stroke(width = 20f, cap = StrokeCap.Round)
+                style = Stroke(
+                    width = 18.dp.toPx(),
+                    cap = StrokeCap.Round
+                )
             )
         }
-        Text(
-            text = "$currentCount",
-            fontSize = 56.sp,
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.onBackground,
-        )
+
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+
+            Text(
+                text = formatIndianNumber(currentCount),
+                style = MaterialTheme.typography.displayMedium,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface,
+                maxLines = 1,
+                softWrap = false
+            )
+
+            Spacer(modifier = Modifier.height(2.dp))
+
+            Text(
+                text = "$currentMalaCount / $malaSize",
+                style = MaterialTheme.typography.labelLarge,
+                fontWeight = FontWeight.Medium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
     }
 }
 
+@Composable
+private fun DetailStat(
+    value: String,
+    modifier: Modifier = Modifier
+) {
+    Text(
+        text = value,
+        style = MaterialTheme.typography.headlineMedium,
+        fontWeight = FontWeight.Bold,
+        color = MaterialTheme.colorScheme.onSurface,
+        modifier = modifier,
+        textAlign = TextAlign.Center,
+        maxLines = 1,
+        softWrap = false
+    )
+}
+
+@Composable
+private fun DetailLifetimeStat(
+    title: String,
+    value: String,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(
+            text = title,
+            style = MaterialTheme.typography.labelMedium,
+            fontWeight = FontWeight.Medium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            maxLines = 1,
+            softWrap = false
+        )
+
+        Spacer(modifier = Modifier.height(2.dp))
+
+        Text(
+            text = value,
+            style = MaterialTheme.typography.titleLarge,
+            fontWeight = FontWeight.SemiBold,
+            color = MaterialTheme.colorScheme.onSurface,
+            maxLines = 1,
+            softWrap = false
+        )
+    }
+}
 @Preview(showBackground = true)
 @Composable
 fun JaapDetailScreenPreview() {

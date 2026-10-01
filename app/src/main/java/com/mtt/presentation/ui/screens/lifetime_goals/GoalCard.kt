@@ -1,41 +1,39 @@
 package com.mtt.presentation.ui.screens.lifetime_goals
 
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.DonutLarge
 import androidx.compose.material.icons.filled.Warning
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ProgressIndicatorDefaults
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
@@ -45,16 +43,13 @@ import com.mtt.jaapmala.data.local.entity.GoalStatus
 import com.mtt.jaapmala.util.DateUtils
 import com.mtt.presentation.ui.screens.home.DeleteConfirmationDialog
 
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun GoalCard(
     goal: GoalUiModel,
     onDeleteGoal: () -> Unit,
 ) {
-    val cardColor = when (goal.status) {
-        GoalStatus.ACTIVE -> MaterialTheme.colorScheme.surfaceVariant
-        GoalStatus.SUCCEEDED -> MaterialTheme.colorScheme.tertiaryContainer
-        GoalStatus.FAILED -> MaterialTheme.colorScheme.errorContainer
+    var showDeleteDialog by rememberSaveable {
+        mutableStateOf(false)
     }
 
     val progressColor = when (goal.status) {
@@ -63,119 +58,187 @@ fun GoalCard(
         GoalStatus.FAILED -> MaterialTheme.colorScheme.error
     }
 
-    var showDeleteDialog by remember { mutableStateOf(false) }
+    val animatedProgress by animateFloatAsState(
+        targetValue = goal.progress,
+        animationSpec = tween(
+            durationMillis = 700,
+            easing = FastOutSlowInEasing
+        ),
+        label = "goalProgress"
+    )
 
     if (showDeleteDialog) {
         DeleteConfirmationDialog(
             title = stringResource(R.string.delete_goal),
-            message = stringResource(R.string.are_you_sure_you_want_to_delete_goal, goal.name),
+            message = stringResource(
+                R.string.are_you_sure_you_want_to_delete_goal,
+                goal.name
+            ),
             onConfirm = {
                 onDeleteGoal()
                 showDeleteDialog = false
             },
-            onDismiss = { showDeleteDialog = false }
+            onDismiss = {
+                showDeleteDialog = false
+            }
         )
     }
 
-    Card(
-        shape = RoundedCornerShape(16.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
-        colors = CardDefaults.cardColors(containerColor = cardColor),
+    Surface(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 8.dp)
+            .padding(horizontal = 16.dp, vertical = 6.dp)
             .combinedClickable(
                 onClick = {},
-                onLongClick = { showDeleteDialog = true }
-            )
-    ) {
-        val animatedProgress by animateFloatAsState(
-            targetValue = goal.progress,
-            animationSpec = tween(durationMillis = 1000, delayMillis = 200),
-            label = "progressAnimation"
+                onLongClick = {
+                    showDeleteDialog = true
+                }
+            ),
+        shape = RoundedCornerShape(20.dp),
+        color = MaterialTheme.colorScheme.surface,
+        border = BorderStroke(
+            width = 1.dp,
+            color = MaterialTheme.colorScheme.outlineVariant
         )
-
+    ) {
         Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+            modifier = Modifier.padding(18.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
 
-            // --- Top Row: Title + Badge ---
+            // Header
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.Top,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                verticalAlignment = Alignment.Top
             ) {
-
                 Column(
                     modifier = Modifier.weight(1f),
-                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                    verticalArrangement = Arrangement.spacedBy(3.dp)
                 ) {
                     Text(
                         text = goal.name,
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onSurface
                     )
 
-                    goal.jaapName?.let {
-                        Text(
-                            text = "For: $it",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
-                            fontWeight = FontWeight.SemiBold
-                        )
-                    }
+                    Text(
+                        text = "For : ${goal.jaapName}",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                 }
 
                 StatusBadge(status = goal.status)
             }
 
-            // --- Progress Section ---
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                LinearProgressIndicator(
-                    progress = { animatedProgress },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(10.dp)
-                        .clip(RoundedCornerShape(10.dp)),
-                    color = progressColor,
-                    trackColor = MaterialTheme.colorScheme.surface,
-                    strokeCap = ProgressIndicatorDefaults.LinearStrokeCap,
-                )
+            // Main progress
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
 
-                Row(modifier = Modifier.fillMaxWidth()) {
+                Column(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(2.dp)
+                ) {
                     Text(
-                        text = "${goal.current} / ${goal.target}",
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = progressColor,
-                        fontWeight = FontWeight.SemiBold
+                        text = goal.current.toString(),
+                        style = MaterialTheme.typography.headlineMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = progressColor
                     )
 
-                    Spacer(modifier = Modifier.weight(1f))
+                    Text(
+                        text = stringResource(R.string.malas_completed),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+
+                Box(
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator(
+                        progress = { animatedProgress },
+                        modifier = Modifier.size(58.dp),
+                        color = progressColor,
+                        trackColor = MaterialTheme.colorScheme.surfaceVariant,
+                        strokeWidth = 6.dp
+                    )
 
                     Text(
-                        text = stringResource(R.string.goal_complete, (goal.progress * 100).toInt()),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                        text = "${(goal.progress * 100).toInt()}%",
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.Bold
                     )
                 }
             }
 
-            // --- Bottom Row ---
+            // Thin progress bar
+            Column(
+                verticalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                LinearProgressIndicator(
+                    progress = { animatedProgress },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(5.dp)
+                        .clip(RoundedCornerShape(50)),
+                    color = progressColor,
+                    trackColor = MaterialTheme.colorScheme.surfaceVariant,
+                )
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text(
+                        text = "${goal.current} / ${goal.target} malas",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+
+                    Text(
+                        text = "${goal.target - goal.current} remaining",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+
+            // Footer
+            HorizontalDivider(
+                color = MaterialTheme.colorScheme.outlineVariant
+            )
+
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.End
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = stringResource(R.string.target),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+
+                    Text(
+                        text = "${goal.target} malas",
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                }
+
                 Text(
-                    text = stringResource(
-                        R.string.end_date,
-                        DateUtils.formatMillisToDate(goal.endDate)
-                    ),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                    text = DateUtils.formatMillisToDate(goal.endDate),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
         }
@@ -189,38 +252,51 @@ fun GoalCard(
 private fun StatusBadge(status: GoalStatus) {
 
     val (text, color, icon) = when (status) {
-        GoalStatus.ACTIVE -> Triple(stringResource(R.string.active), MaterialTheme.colorScheme.primary, Icons.Default.DonutLarge)
-        GoalStatus.SUCCEEDED -> Triple(stringResource(R.string.succeeded), Color(0xFF388E3C), Icons.Default.CheckCircle)
-        GoalStatus.FAILED -> Triple(stringResource(R.string.failed), Color(0xFFD32F2F), Icons.Default.Warning)
+        GoalStatus.ACTIVE -> Triple(
+            stringResource(R.string.active),
+            MaterialTheme.colorScheme.primary,
+            Icons.Default.DonutLarge
+        )
+
+        GoalStatus.SUCCEEDED -> Triple(
+            stringResource(R.string.succeeded),
+            MaterialTheme.colorScheme.tertiary,
+            Icons.Default.CheckCircle
+        )
+
+        GoalStatus.FAILED -> Triple(
+            stringResource(R.string.failed),
+            MaterialTheme.colorScheme.error,
+            Icons.Default.Warning
+        )
     }
 
-    val fontScale = LocalDensity.current.fontScale
-    val horizontalPadding = (8 * fontScale).dp.coerceAtMost(12.dp)
-    val verticalPadding = (4 * fontScale).dp.coerceAtMost(6.dp)
-    val iconSize = (16 * fontScale).dp.coerceIn(14.dp, 20.dp)
-
     Row(
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(4.dp),
         modifier = Modifier
-            .widthIn(max = 120.dp)
-            .background(color.copy(alpha = 0.1f), RoundedCornerShape(8.dp))
-            .padding(horizontal = horizontalPadding, vertical = verticalPadding)
+            .background(
+                color = color.copy(alpha = 0.08f),
+                shape = RoundedCornerShape(50)
+            )
+            .padding(
+                horizontal = 9.dp,
+                vertical = 5.dp
+            ),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(4.dp)
     ) {
         Icon(
             imageVector = icon,
-            contentDescription = text,
+            contentDescription = null,
             tint = color,
-            modifier = Modifier.size(iconSize)
+            modifier = Modifier.size(14.dp)
         )
 
         Text(
             text = text,
+            style = MaterialTheme.typography.labelSmall,
+            fontWeight = FontWeight.SemiBold,
             color = color,
-            fontWeight = FontWeight.Bold,
-            style = MaterialTheme.typography.labelMedium,
-            maxLines = 1,
-            softWrap = false
+            maxLines = 1
         )
     }
 }

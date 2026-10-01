@@ -17,6 +17,9 @@ sealed class Screens(val route: String) {
     data object DailyGoalHistoryScreen:Screens("daily_goal_history/{goalId}"){
         fun passGoalId(id:Int): String ="daily_goal_history/$id"
     }
-
+    data object PracticeInsightsScreen: Screens("practice_insights/{jaapId}") {
+        fun passJaapId(jaapId: Int): String =
+            "practice_insights/$jaapId"
+    }
 
 }

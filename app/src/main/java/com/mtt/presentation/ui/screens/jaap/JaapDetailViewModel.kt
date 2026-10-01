@@ -3,18 +3,18 @@ package com.mtt.presentation.ui.screens.jaap
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.mtt.jaapmala.R
-import com.mtt.jaapmala.domain.usecase.jaap.EnsureTodayUseCase
+import com.mtt.jaapmala.domain.usecase.goals.UpdateGoalProgressUseCase
 import com.mtt.jaapmala.domain.usecase.haptics.GetHapticFeedbackUseCase
 import com.mtt.jaapmala.domain.usecase.haptics.GetHapticFrequencyUseCase
+import com.mtt.jaapmala.domain.usecase.haptics.ShouldTriggerHapticUseCase
+import com.mtt.jaapmala.domain.usecase.jaap.EnsureTodayUseCase
 import com.mtt.jaapmala.domain.usecase.jaap.GetJaapHistoryUseCase
 import com.mtt.jaapmala.domain.usecase.jaap.GetMantraUseCase
-import com.mtt.jaapmala.domain.usecase.sound.GetMeditationSoundEnabledUseCase
-import com.mtt.jaapmala.domain.usecase.sound.GetSoundModeUseCase
 import com.mtt.jaapmala.domain.usecase.jaap.SaveJaapHistoryUseCase
-import com.mtt.jaapmala.domain.usecase.haptics.ShouldTriggerHapticUseCase
-import com.mtt.jaapmala.domain.usecase.goals.UpdateGoalProgressUseCase
 import com.mtt.jaapmala.domain.usecase.jaap.UpdateJaapManuallyUseCase
 import com.mtt.jaapmala.domain.usecase.jaap.UpdateJaapUseCase
+import com.mtt.jaapmala.domain.usecase.sound.GetMeditationSoundEnabledUseCase
+import com.mtt.jaapmala.domain.usecase.sound.GetSoundModeUseCase
 import com.mtt.jaapmala.util.JaapSoundManager
 import com.mtt.presentation.ui.screens.app_bar.TopBarAction
 import com.mtt.presentation.ui.screens.settings.SoundMode
@@ -201,7 +201,7 @@ class JaapDetailViewModel @Inject constructor(
         viewModelScope.launch {
 
             val safeCurrent = ensureTodayUseCase(current)
-            if (safeCurrent.count <= 0) {
+            if (safeCurrent.todayCount <= 0) {
                 return@launch
             }
             val updated = safeCurrent.copy(
@@ -277,6 +277,10 @@ class JaapDetailViewModel @Inject constructor(
 
                 is TopBarAction.Share -> {
                     shareProgress()
+                }
+                is TopBarAction.PracticeInsights ->{
+                    val jaapId = state.value.mantra?.id ?: return@launch
+                    _effect.send(JaapDetailEffect.NavigateToInsights(jaapId))
                 }
 
                 else -> {}
