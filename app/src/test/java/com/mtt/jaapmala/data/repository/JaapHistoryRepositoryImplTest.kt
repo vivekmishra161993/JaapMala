@@ -3,6 +3,7 @@ package com.mtt.jaapmala.data.repository
 import app.cash.turbine.test
 import com.mtt.jaapmala.data.local.dao.JaapHistoryDao
 import com.mtt.jaapmala.data.local.entity.JaapHistoryEntity
+import com.mtt.jaapmala.domain.model.JaapHistory
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.just
@@ -55,8 +56,8 @@ class JaapHistoryRepositoryImplTest {
         // Arrange
         val jaapId = 1
         val history = listOf(
-            JaapHistoryEntity(jaapId, "2025-09-15", count = 108, malaCount = 1),
-            JaapHistoryEntity(jaapId, "2025-09-16", count = 216, malaCount = 2)
+            JaapHistory(jaapId, "2025-09-15", count = 108, malaCount = 1),
+            JaapHistory(jaapId, "2025-09-16", count = 216, malaCount = 2)
         )
 
         coEvery { dao.getHistoryForJaap(jaapId) } returns flowOf(history)

@@ -11,8 +11,12 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.CheckCircle
+import androidx.compose.material.icons.outlined.DonutLarge
+import androidx.compose.material.icons.outlined.Schedule
+import androidx.compose.material.icons.outlined.Warning
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.HorizontalDivider
@@ -57,20 +61,34 @@ fun DailyGoalHistoryItem(
         DailyGoalDayStatus.MISSED -> stringResource(R.string.missed)
     }
 
+    val statusIcon = when (day.status) {
+        DailyGoalDayStatus.COMPLETED ->
+            Icons.Outlined.CheckCircle
+
+        DailyGoalDayStatus.PARTIAL ->
+            Icons.Outlined.DonutLarge
+
+        DailyGoalDayStatus.PENDING ->
+            Icons.Outlined.Schedule
+
+        DailyGoalDayStatus.MISSED ->
+            Icons.Outlined.Warning
+    }
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 8.dp),
-        shape = RoundedCornerShape(16.dp),
+            .padding(vertical = 6.dp),
+        shape = RoundedCornerShape(18.dp),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant
+            containerColor = MaterialTheme.colorScheme.surface
         ),
         border = BorderStroke(
-            1.dp,
-            MaterialTheme.colorScheme.outlineVariant
+            width = 1.dp,
+            color = MaterialTheme.colorScheme.outlineVariant
         ),
         elevation = CardDefaults.cardElevation(
-            defaultElevation = 2.dp
+            defaultElevation = 0.dp
         )
     ) {
         Column(
@@ -78,22 +96,28 @@ fun DailyGoalHistoryItem(
                 .fillMaxWidth()
                 .padding(16.dp)
         ) {
+
+            // ---------------------------------------------------------
+            // Date + Status
+            // ---------------------------------------------------------
+
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
+
                 Box(
                     modifier = Modifier
                         .background(
                             color = MaterialTheme.colorScheme.primary.copy(
-                                alpha = 0.15f
+                                alpha = 0.08f
                             ),
-                            shape = RoundedCornerShape(8.dp)
+                            shape = RoundedCornerShape(10.dp)
                         )
                         .padding(
-                            horizontal = 12.dp,
-                            vertical = 4.dp
+                            horizontal = 10.dp,
+                            vertical = 5.dp
                         )
                 ) {
                     Text(
@@ -104,12 +128,34 @@ fun DailyGoalHistoryItem(
                     )
                 }
 
-                Text(
-                    text = statusText,
-                    style = MaterialTheme.typography.labelMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = statusColor
-                )
+                Row(
+                    modifier = Modifier
+                        .background(
+                            color = statusColor.copy(alpha = 0.08f),
+                            shape = RoundedCornerShape(50)
+                        )
+                        .padding(
+                            horizontal = 9.dp,
+                            vertical = 5.dp
+                        ),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    Icon(
+                        imageVector = statusIcon,
+                        contentDescription = null,
+                        tint = statusColor,
+                        modifier = Modifier.size(14.dp)
+                    )
+
+                    Text(
+                        text = statusText,
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.SemiBold,
+                        color = statusColor,
+                        maxLines = 1
+                    )
+                }
             }
 
             Spacer(modifier = Modifier.height(12.dp))
@@ -121,73 +167,95 @@ fun DailyGoalHistoryItem(
 
             Spacer(modifier = Modifier.height(12.dp))
 
+            // ---------------------------------------------------------
+            // Completed + Target
+            // ---------------------------------------------------------
+
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
+
                 Row(
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
                     Icon(
                         painter = painterResource(
                             id = R.drawable.ic_mala_count
                         ),
-                        contentDescription = "Completed Malas",
+                        contentDescription = null,
                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.size(18.dp)
                     )
 
-                    Spacer(modifier = Modifier.width(6.dp))
-
                     Text(
-                        text = stringResource(R.string.completed)+": ",
-                        style = MaterialTheme.typography.bodyMedium
+                        text = stringResource(R.string.completed),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
 
                     Text(
-                        text = "${day.completedMalas}",
+                        text = day.completedMalas.toString(),
                         style = MaterialTheme.typography.bodyMedium,
-                        fontWeight = FontWeight.Bold
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                 }
 
                 Row(
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
                     Text(
                         text = stringResource(R.string.target),
-                        style = MaterialTheme.typography.bodyMedium
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
 
                     Text(
-                        text = "${day.targetMalas}",
+                        text = day.targetMalas.toString(),
                         style = MaterialTheme.typography.bodyMedium,
-                        fontWeight = FontWeight.Bold
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                 }
             }
 
             Spacer(modifier = Modifier.height(12.dp))
 
+            // ---------------------------------------------------------
+            // Progress
+            // ---------------------------------------------------------
+
             LinearProgressIndicator(
                 progress = { day.progress },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(8.dp)
-                    .clip(RoundedCornerShape(8.dp)),
+                    .height(5.dp)
+                    .clip(RoundedCornerShape(50)),
                 color = statusColor,
-                trackColor = MaterialTheme.colorScheme.surface,
+                trackColor = MaterialTheme.colorScheme.surfaceVariant,
                 strokeCap = ProgressIndicatorDefaults.LinearStrokeCap
             )
 
             Spacer(modifier = Modifier.height(8.dp))
 
+            // ---------------------------------------------------------
+            // Progress information
+            // ---------------------------------------------------------
+
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = stringResource(R.string.history_complete, (day.progress * 100).toInt()),
+                    text = stringResource(
+                        R.string.history_complete,
+                        (day.progress * 100).toInt()
+                    ),
                     style = MaterialTheme.typography.bodySmall,
                     color = statusColor,
                     fontWeight = FontWeight.SemiBold
@@ -200,9 +268,7 @@ fun DailyGoalHistoryItem(
                             day.targetMalas - day.completedMalas
                         ),
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(
-                            alpha = 0.7f
-                        )
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }

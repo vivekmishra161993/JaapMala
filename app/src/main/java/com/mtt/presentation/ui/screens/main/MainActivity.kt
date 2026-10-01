@@ -1,6 +1,5 @@
 package com.mtt.presentation.ui.screens.main
 
-//import com.mtt.presentation.ui.screens.add_goal.AddGoalScreen
 import android.annotation.SuppressLint
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -42,6 +41,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.mtt.jaapmala.R
 import com.mtt.jaapmala.data.local.db.BackupPrefs
 import com.mtt.jaapmala.data.local.db.DatabaseManager
 import com.mtt.jaapmala.domain.model.ThemeOption
@@ -64,6 +64,7 @@ import com.mtt.presentation.ui.screens.home.HomeViewModel
 import com.mtt.presentation.ui.screens.jaap.JaapDetailScreen
 import com.mtt.presentation.ui.screens.jaap.JaapDetailViewModel
 import com.mtt.presentation.ui.screens.onboarding.OnboardingScreen
+import com.mtt.presentation.ui.screens.practice_insights.PracticeInsightsScreen
 import com.mtt.presentation.ui.screens.settings.SettingsScreen
 import com.mtt.presentation.ui.theme.JaapMalaTheme
 import dagger.hilt.android.AndroidEntryPoint
@@ -128,7 +129,8 @@ class MainActivity : ComponentActivity() {
                 Screens.AddGoalScreen.route,
                 Screens.OnBoardingScreen.route,
                 Screens.Settings.route,
-                Screens.DailyGoalHistoryScreen.route
+                Screens.DailyGoalHistoryScreen.route,
+                Screens.PracticeInsightsScreen.route
             )
             val topLevelRoutes = remember {
                 setOf(
@@ -148,7 +150,7 @@ class MainActivity : ComponentActivity() {
                         viewModel.onIntent(HomeIntent.InitializeHome)
                         viewModel.onIntent(
                             HomeIntent.UpdateTopBar(
-                                "Jaap Mala",
+                                getString(R.string.jaap_mala),
                                 listOf(
                                     TopBarAction.Backup,
                                     TopBarAction.Restore,
@@ -159,27 +161,36 @@ class MainActivity : ComponentActivity() {
                     }
 
                     BottomTabItem.Goals.route -> {
-                        viewModel.onIntent(HomeIntent.UpdateTopBar("Goals", emptyList()))
+                        viewModel.onIntent(HomeIntent.UpdateTopBar(getString(R.string.goals), emptyList()))
                     }
 
                     Screens.Settings.route -> {
-                        viewModel.onIntent(HomeIntent.UpdateTopBar("Settings", emptyList()))
+                        viewModel.onIntent(HomeIntent.UpdateTopBar(getString(R.string.settings), emptyList()))
                     }
 
                     Screens.AddGoalScreen.route -> {
-                        viewModel.onIntent(HomeIntent.UpdateTopBar("Add Goal", emptyList()))
+                        viewModel.onIntent(HomeIntent.UpdateTopBar(getString(R.string.add_goal), emptyList()))
                     }
 
                     Screens.AddJaapDialog.route -> {
-                        viewModel.onIntent(HomeIntent.UpdateTopBar("Add Mantra", emptyList()))
+                        viewModel.onIntent(HomeIntent.UpdateTopBar(getString(R.string.add_mantra), emptyList()))
                     }
 
                     Screens.JaapHistoryScreen.route -> {
-                        viewModel.onIntent(HomeIntent.UpdateTopBar("History", emptyList()))
+                        viewModel.onIntent(HomeIntent.UpdateTopBar(getString(R.string.history), emptyList()))
                     }
 
                     Screens.AddDailyGoalScreen.route ->{
-                        viewModel.onIntent(HomeIntent.UpdateTopBar("Add Daily Goal",emptyList()))
+                        viewModel.onIntent(HomeIntent.UpdateTopBar(getString(R.string.add_daily_goal),emptyList()))
+                    }
+
+                    Screens.PracticeInsightsScreen.route ->{
+                        viewModel.onIntent(HomeIntent.UpdateTopBar("Practice Insights", emptyList()))
+
+                    }
+
+                    Screens.DailyGoalHistoryScreen.route ->{
+                        viewModel.onIntent(HomeIntent.UpdateTopBar("Daily Goal History",emptyList()))
                     }
                 }
             }
@@ -391,12 +402,29 @@ class MainActivity : ComponentActivity() {
                                 padding = innerPadding
                             )
                         }
+                        composable(
+                            route = Screens.PracticeInsightsScreen.route,
+                            arguments = listOf(
+                                navArgument("jaapId") {
+                                    type = NavType.IntType
+                                }
+                            )
+                        ) { backStackEntry ->
+
+                            val jaapId =
+                                backStackEntry.arguments?.getInt("jaapId")
+                                    ?: return@composable
+
+                            PracticeInsightsScreen(
+                                jaapId = jaapId,
+                                padding = innerPadding
+                            )
+                        }
                     }
                 }
             }
         }
     }
-
 }
 
 

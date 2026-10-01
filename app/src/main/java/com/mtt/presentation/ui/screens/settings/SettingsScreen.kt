@@ -7,19 +7,38 @@ import android.os.Build
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.outlined.ArrowBack
+import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowRight
+import androidx.compose.material.icons.automirrored.outlined.VolumeUp
+import androidx.compose.material.icons.outlined.AccessTime
+import androidx.compose.material.icons.outlined.NotificationsNone
+import androidx.compose.material.icons.outlined.Palette
+import androidx.compose.material.icons.outlined.Vibration
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -34,20 +53,19 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.lerp
 import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.mtt.jaapmala.R
 import com.mtt.jaapmala.domain.model.ThemeOption
 import com.mtt.jaapmala.util.DateUtils
-import com.mtt.presentation.ui.screens.FontScaledSpacer
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -61,37 +79,51 @@ fun SettingsScreen(
     val themeOption by viewModel.themeOption.collectAsState()
     val isReminderEnabled by viewModel.isDailyReminderEnabled.collectAsState()
     val reminderTime by viewModel.reminderTime.collectAsState()
+    val soundMode by viewModel.soundMode.collectAsState()
+
     val context = LocalContext.current
-    // Launcher to request POST_NOTIFICATIONS
-    val notificationPermissionLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.RequestPermission()
-    ) { isGranted ->
-        if (!isGranted) {
-            Toast.makeText(context, "Notifications disabled", Toast.LENGTH_SHORT).show()
-            // reset reminder if permission not granted
-            viewModel.toggleDailyReminder(false)
-        } else {
-            viewModel.toggleDailyReminder(true)
+
+    val notificationPermissionLauncher =
+        rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.RequestPermission()
+        ) { isGranted ->
+            if (!isGranted) {
+                Toast.makeText(
+                    context,
+                    "Notifications disabled",
+                    Toast.LENGTH_SHORT
+                ).show()
+
+                viewModel.toggleDailyReminder(false)
+            } else {
+                viewModel.toggleDailyReminder(true)
+            }
         }
-    }
+
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
-                modifier = Modifier.shadow(elevation = 10.dp),
-                title = { Text(stringResource(R.string.settings)) },
+                title = {
+                    Text(
+                        text = stringResource(R.string.settings),
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                },
                 navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
+                    IconButton(
+                        onClick = { navController.popBackStack() }
+                    ) {
                         Icon(
-                            Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Back",
+                            imageVector = Icons.AutoMirrored.Outlined.ArrowBack,
+                            contentDescription = null
                         )
                     }
                 },
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    titleContentColor = MaterialTheme.colorScheme.onPrimary,
-                    navigationIconContentColor = MaterialTheme.colorScheme.onPrimary,
-                    actionIconContentColor = MaterialTheme.colorScheme.onPrimary
+                    containerColor = MaterialTheme.colorScheme.background,
+                    titleContentColor = MaterialTheme.colorScheme.onBackground,
+                    navigationIconContentColor = MaterialTheme.colorScheme.onBackground
                 )
             )
         },
@@ -100,35 +132,37 @@ fun SettingsScreen(
 
         Column(
             modifier = Modifier
+                .fillMaxSize()
                 .padding(
-                    top = padding.calculateTopPadding(),
-                    start = 20.dp,
-                    end = 20.dp,
+                    top = padding.calculateTopPadding()+8.dp,
+                    start = 16.dp,
+                    end = 16.dp,
                     bottom = padding.calculateBottomPadding()
                 )
-                .fillMaxWidth()
-                .verticalScroll(rememberScrollState())
+                .verticalScroll(rememberScrollState()),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // Daily Reminder Toggle
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.fillMaxWidth()
+
+            // ---------------------------------------------------------
+            // Daily Reminder
+            // ---------------------------------------------------------
+
+            SettingsSectionCard(
+                icon = Icons.Outlined.NotificationsNone,
+                title = stringResource(R.string.daily_reminder)
             ) {
-                Text(
-                    stringResource(R.string.daily_reminder),
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.onBackground
-                )
-                Spacer(modifier = Modifier.weight(1f))
-                Switch(
+                SettingsSwitchRow(
+                    title = stringResource(R.string.daily_reminder),
                     checked = isReminderEnabled,
                     onCheckedChange = { enabled ->
                         if (enabled) {
                             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                                val hasPermission = ContextCompat.checkSelfPermission(
-                                    context,
-                                    Manifest.permission.POST_NOTIFICATIONS
-                                ) == PackageManager.PERMISSION_GRANTED
+
+                                val hasPermission =
+                                    ContextCompat.checkSelfPermission(
+                                        context,
+                                        Manifest.permission.POST_NOTIFICATIONS
+                                    ) == PackageManager.PERMISSION_GRANTED
 
                                 if (!hasPermission) {
                                     notificationPermissionLauncher.launch(
@@ -137,6 +171,7 @@ fun SettingsScreen(
                                 } else {
                                     viewModel.toggleDailyReminder(true)
                                 }
+
                             } else {
                                 viewModel.toggleDailyReminder(true)
                             }
@@ -145,22 +180,30 @@ fun SettingsScreen(
                         }
                     }
                 )
-            }
 
-            // Reminder Time (only if enabled)
-            if (isReminderEnabled) {
-                FontScaledSpacer(startHeight = 8.dp, endHeight = 16.dp)
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable {
-                            // Open Android TimePickerDialog
-                            val (hour, minute) = reminderTime.split(":").map { it.toInt() }
+                if (isReminderEnabled) {
+                    HorizontalDivider(
+                        modifier = Modifier.padding(vertical = 4.dp),
+                        color = MaterialTheme.colorScheme.outlineVariant
+                    )
+
+                    SettingsClickableRow(
+                        icon = Icons.Outlined.AccessTime,
+                        title = stringResource(R.string.reminder_time),
+                        value = DateUtils.formatTimeTo12Hour(reminderTime),
+                        onClick = {
+                            val (hour, minute) =
+                                reminderTime.split(":").map { it.toInt() }
+
                             TimePickerDialog(
                                 context,
                                 { _, selectedHour, selectedMinute ->
-                                    val newTime = "%02d:%02d".format(selectedHour, selectedMinute)
+                                    val newTime =
+                                        "%02d:%02d".format(
+                                            selectedHour,
+                                            selectedMinute
+                                        )
+
                                     viewModel.updateReminderTime(newTime)
                                 },
                                 hour,
@@ -168,129 +211,304 @@ fun SettingsScreen(
                                 false
                             ).show()
                         }
-                        .padding(vertical = 8.dp)
-                ) {
-                    Text(
-                        stringResource(R.string.reminder_time),
-                        color = MaterialTheme.colorScheme.onBackground
-                    )
-                    Spacer(modifier = Modifier.weight(1f))
-                    Text(
-                        DateUtils.formatTimeTo12Hour(reminderTime),
-                        color = MaterialTheme.colorScheme.primary,
-                        fontWeight = FontWeight.Bold
                     )
                 }
             }
 
-            FontScaledSpacer(startHeight = 24.dp, endHeight = 48.dp)
+            // ---------------------------------------------------------
+            // Sound Feedback
+            // ---------------------------------------------------------
 
-            // Meditation Sound Section
-            Text(
-                stringResource(R.string.sound_feedback),
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onBackground
-            )
-            FontScaledSpacer(startHeight = 8.dp, endHeight = 16.dp)
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.fillMaxWidth()
+            SettingsSectionCard(
+                icon = Icons.AutoMirrored.Outlined.VolumeUp,
+                title = stringResource(R.string.sound_feedback)
             ) {
-                Text(
-                    stringResource(R.string.enable_meditation_sound),
-                    color = MaterialTheme.colorScheme.onBackground,
-                    modifier = Modifier.weight(1f)
-                )
-                Switch(
+                SettingsSwitchRow(
+                    title = stringResource(R.string.enable_meditation_sound),
                     checked = meditationSoundEnabled,
-                    onCheckedChange = { viewModel.toggleMeditationSound(it) }
+                    onCheckedChange = {
+                        viewModel.toggleMeditationSound(it)
+                    }
                 )
-            }
-            //Sound
-            FontScaledSpacer(startHeight = 8.dp, endHeight = 16.dp)
-            Text(
-                stringResource(R.string.sound_feed),
-                color = MaterialTheme.colorScheme.onBackground
-            )
-            FontScaledSpacer(startHeight = 8.dp, endHeight = 16.dp)
 
-            SoundModeSettingsItem(
-                viewModel.soundMode.collectAsState().value,
-                viewModel::updateSoundMode
-            )
+                Spacer(modifier = Modifier.height(12.dp))
 
-            // Haptic feedback
-            FontScaledSpacer(startHeight = 8.dp, endHeight = 16.dp)
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.fillMaxWidth()
-            ) {
                 Text(
-                    stringResource(R.string.haptic_feedback),
-                    color = MaterialTheme.colorScheme.onBackground
+                    text = stringResource(R.string.sound_feed),
+                    style = MaterialTheme.typography.labelLarge,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
-                Spacer(modifier = Modifier.weight(1f))
-                Switch(
+
+                Spacer(modifier = Modifier.height(4.dp))
+
+                SoundModeSettingsItem(
+                    soundMode,
+                    viewModel::updateSoundMode
+                )
+            }
+
+            // ---------------------------------------------------------
+            // Haptic Feedback
+            // ---------------------------------------------------------
+
+            SettingsSectionCard(
+                icon = Icons.Outlined.Vibration,
+                title = stringResource(R.string.haptic_feedback)
+            ) {
+                SettingsSwitchRow(
+                    title = stringResource(R.string.haptic_feedback),
                     checked = hapticFeedbackEnabled,
-                    onCheckedChange = { viewModel.toggleHapticFeedback(it) }
+                    onCheckedChange = {
+                        viewModel.toggleHapticFeedback(it)
+                    }
                 )
-            }
 
-            if (hapticFeedbackEnabled) {
-                val fontScale = LocalDensity.current.fontScale
-                val fraction = ((fontScale - 1f) / 1f).coerceIn(0f, 1f)
-                val spacerHeight = lerp(8.dp, 48.dp, fraction)
+                if (hapticFeedbackEnabled) {
+                    Spacer(modifier = Modifier.height(16.dp))
 
-                Spacer(modifier = Modifier.height(spacerHeight))
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text(
-                        stringResource(R.string.vibrate_every_jaaps, hapticFeedbackFrequency),
-                        color = MaterialTheme.colorScheme.onBackground
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = stringResource(
+                                R.string.vibrate_every_jaaps,
+                                hapticFeedbackFrequency
+                            ),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+
+                        Text(
+                            text = hapticFeedbackFrequency.toString(),
+                            style = MaterialTheme.typography.labelLarge,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
+
+                    Slider(
+                        value = hapticFeedbackFrequency.toFloat(),
+                        onValueChange = {
+                            viewModel.setHapticFeedbackFrequency(
+                                it.toInt()
+                            )
+                        },
+                        valueRange = 1f..108f,
+                        steps = 107,
+                        modifier = Modifier.fillMaxWidth()
                     )
                 }
-                Slider(
-                    value = hapticFeedbackFrequency.toFloat(),
-                    onValueChange = { viewModel.setHapticFeedbackFrequency(it.toInt()) },
-                    valueRange = 1f..108f,
-                    steps = 107
-                )
             }
 
-            val fontScale = LocalDensity.current.fontScale
-            val fraction = ((fontScale - 1f) / 1f).coerceIn(0f, 1f)
-            val spacerHeight = lerp(24.dp, 48.dp, fraction)
+            // ---------------------------------------------------------
+            // Theme
+            // ---------------------------------------------------------
 
-            Spacer(modifier = Modifier.height(spacerHeight))
+            SettingsSectionCard(
+                icon = Icons.Outlined.Palette,
+                title = stringResource(R.string.theme)
+            ) {
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(2.dp)
+                ) {
+                    ThemeOption.entries.forEach { option ->
 
-            // Theme Section
-            Text(
-                stringResource(R.string.theme),
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onBackground
-            )
+                        val selected = themeOption == option
+
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(12.dp))
+                                .clickable {
+                                    viewModel.updateTheme(option)
+                                }
+                                .background(
+                                    if (selected) {
+                                        MaterialTheme.colorScheme
+                                            .primary
+                                            .copy(alpha = 0.08f)
+                                    } else {
+                                        Color.Transparent
+                                    }
+                                )
+                                .padding(
+                                    horizontal = 4.dp,
+                                    vertical = 2.dp
+                                ),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            RadioButton(
+                                selected = selected,
+                                onClick = {
+                                    viewModel.updateTheme(option)
+                                }
+                            )
+
+                            Text(
+                                text = stringResource(
+                                    option.displayNameRes
+                                ),
+                                modifier = Modifier.padding(start = 4.dp),
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = if (selected) {
+                                    MaterialTheme.colorScheme.primary
+                                } else {
+                                    MaterialTheme.colorScheme.onSurface
+                                },
+                                fontWeight = if (selected) {
+                                    FontWeight.SemiBold
+                                } else {
+                                    FontWeight.Normal
+                                }
+                            )
+                        }
+                    }
+                }
+            }
+
             Spacer(modifier = Modifier.height(8.dp))
-            ThemeOption.entries.forEach { option ->
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
+        }
+    }
+}
+@Composable
+private fun SettingsSectionCard(
+    icon: ImageVector,
+    title: String,
+    content: @Composable ColumnScope.() -> Unit
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(18.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        ),
+        border = BorderStroke(
+            width = 1.dp,
+            color = MaterialTheme.colorScheme.outlineVariant
+        ),
+        elevation = CardDefaults.cardElevation(
+            defaultElevation = 0.dp
+        )
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
+        ) {
+
+            Row(
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Box(
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable { viewModel.updateTheme(option) }
-                        .padding(vertical = 8.dp)
+                        .size(36.dp)
+                        .background(
+                            color = MaterialTheme.colorScheme.primary
+                                .copy(alpha = 0.08f),
+                            shape = CircleShape
+                        ),
+                    contentAlignment = Alignment.Center
                 ) {
-                    RadioButton(
-                        selected = themeOption == option,
-                        onClick = { viewModel.updateTheme(option) }
-                    )
-                    Text(
-                        stringResource(option.displayNameRes),
-                        modifier = Modifier.padding(start = 8.dp),
-                        color = MaterialTheme.colorScheme.onBackground
+                    Icon(
+                        imageVector = icon,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(20.dp)
                     )
                 }
+
+                Spacer(modifier = Modifier.width(12.dp))
+
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
             }
+
+            Spacer(modifier = Modifier.height(14.dp))
+
+            content()
         }
+    }
+}
+@Composable
+private fun SettingsSwitchRow(
+    title: String,
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = title,
+            modifier = Modifier.weight(1f),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurface
+        )
+
+        Spacer(modifier = Modifier.width(12.dp))
+
+        Switch(
+            checked = checked,
+            onCheckedChange = onCheckedChange
+        )
+    }
+}
+@Composable
+private fun SettingsClickableRow(
+    icon: ImageVector,
+    title: String,
+    value: String,
+    onClick: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(12.dp))
+            .clickable(onClick = onClick)
+            .padding(
+                horizontal = 4.dp,
+                vertical = 8.dp
+            ),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.size(20.dp)
+        )
+
+        Spacer(modifier = Modifier.width(10.dp))
+
+        Text(
+            text = title,
+            modifier = Modifier.weight(1f),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurface
+        )
+
+        Text(
+            text = value,
+            style = MaterialTheme.typography.bodyMedium,
+            fontWeight = FontWeight.SemiBold,
+            color = MaterialTheme.colorScheme.primary
+        )
+
+        Spacer(modifier = Modifier.width(4.dp))
+
+        Icon(
+            imageVector = Icons.AutoMirrored.Outlined.KeyboardArrowRight,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.size(20.dp)
+        )
     }
 }

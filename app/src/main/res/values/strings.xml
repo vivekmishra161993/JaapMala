@@ -110,4 +110,14 @@
     <string name="got_it">Got it</string>
     <string name="what_s_new">What’s New</string>
     <string name="version">Version %1$s</string>
+    <string name="jaap_mala">Jaap Mala</string>
+    <string name="goals">Goals</string>
+    <string name="add_goal">Add Goal</string>
+    <string name="add_mantra">Add Mantra</string>
+    <string name="history">History</string>
+    <string name="add_daily_goal">Add Daily Goal</string>
+    <string name="lifetime_goal">Lifetime goal</string>
+    <string name="malas_completed">malas completed</string>
+    <string name="today_s_goal">Today\'s goal</string>
+    <string name="goal_progress">%1$d / %2$d malas</string>
 </resources>

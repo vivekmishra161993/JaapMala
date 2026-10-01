@@ -7,4 +7,6 @@ sealed class TopBarAction(val title: String) {
     object History : TopBarAction("History")
     object  Share : TopBarAction("Share Progress")
     object Settings : TopBarAction("Settings")
+
+    object PracticeInsights : TopBarAction("Practice Insights")
 }
