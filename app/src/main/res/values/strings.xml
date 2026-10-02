@@ -44,7 +44,7 @@
     <string name="enter_mala_size">Enter Mala Size</string>
     <string name="e_g_108">e.g. 108</string>
     <string name="submit">Submit</string>
-    <string name="edit_mantra">Edit Mantra</string>
+    <string name="edit_mantra">Edit Mantra Name</string>
     <string name="no_mantras_yet_click_to_add_a_new_mantra">No mantras yet. \nClick + to add a new mantra</string>
     <string name="no_mantras_yet">No mantras yet</string>
     <string name="tap_the_button_to_add_a_new_mantra">Tap the + button to add a new mantra</string>
@@ -120,4 +120,6 @@
     <string name="malas_completed">malas completed</string>
     <string name="today_s_goal">Today\'s goal</string>
     <string name="goal_progress">%1$d / %2$d malas</string>
+    <string name="save">Save</string>
+    <string name="set_a_long_term_goal_for_your_jaap_practice">Set a long-term goal for your Jaap practice</string>
 </resources>

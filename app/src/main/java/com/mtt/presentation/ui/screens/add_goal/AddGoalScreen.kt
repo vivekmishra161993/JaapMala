@@ -1,25 +1,36 @@
 package com.mtt.presentation.ui.screens.add_goal
 
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.outlined.CalendarToday
+import androidx.compose.material.icons.outlined.Check
+import androidx.compose.material.icons.outlined.Flag
+import androidx.compose.material.icons.outlined.Repeat
+import androidx.compose.material.icons.outlined.SelfImprovement
 import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.ElevatedButton
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
@@ -29,6 +40,7 @@ import androidx.compose.material3.MenuAnchorType
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.SelectableDates
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -38,11 +50,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
@@ -53,183 +63,347 @@ import com.mtt.jaapmala.util.DateUtils
 @Composable
 fun AddGoalScreen(
     paddingValues: PaddingValues,
-    navController: NavController, // For navigating back
-    viewModel: AddGoalViewModel = hiltViewModel<AddGoalViewModel>()
+    navController: NavController,
+    viewModel: AddGoalViewModel = hiltViewModel()
 ) {
-
     var isExpanded by remember { mutableStateOf(false) }
+    var showDatePickerDialog by remember { mutableStateOf(false) }
+
     val mantras by viewModel.mantra.collectAsStateWithLifecycle()
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
     val endDatePickerState = rememberDatePickerState(
         initialSelectedDateMillis = uiState.endDate,
         selectableDates = object : SelectableDates {
-            override fun isSelectableDate(utcTimeMillis: Long): Boolean {
-                return utcTimeMillis >= System.currentTimeMillis() - 86400000
+            override fun isSelectableDate(
+                utcTimeMillis: Long
+            ): Boolean {
+                return utcTimeMillis >=
+                        System.currentTimeMillis() - 86400000
             }
         }
     )
-    var showDatePickerDialog by remember { mutableStateOf(false) }
 
     Column(
         modifier = Modifier
             .fillMaxSize()
             .padding(paddingValues)
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp) // Add more space between fields
+            .verticalScroll(rememberScrollState())
+            .padding(
+                horizontal = 20.dp,
+                vertical = 16.dp
+            ),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        // Dropdown for selecting Jaapa
+
+        // ---------------------------------------------------------
+        // Header
+        // ---------------------------------------------------------
+
+        Row(
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(44.dp)
+                    .background(
+                        color = MaterialTheme.colorScheme.primary
+                            .copy(alpha = 0.08f),
+                        shape = CircleShape
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = Icons.Outlined.Flag,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(24.dp)
+                )
+            }
+
+            Spacer(modifier = Modifier.width(12.dp))
+
+            Column {
+                Text(
+                    text = stringResource(R.string.set_a_long_term_goal_for_your_jaap_practice),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(4.dp))
+
+        // ---------------------------------------------------------
+        // Mantra Selection
+        // ---------------------------------------------------------
+
         ExposedDropdownMenuBox(
             modifier = Modifier.fillMaxWidth(),
             expanded = isExpanded,
-            onExpandedChange = { isExpanded = !isExpanded }
+            onExpandedChange = {
+                isExpanded = !isExpanded
+            }
         ) {
             OutlinedTextField(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .menuAnchor(MenuAnchorType.PrimaryNotEditable, true),
+                    .menuAnchor(
+                        MenuAnchorType.PrimaryNotEditable,
+                        true
+                    ),
                 readOnly = true,
-                value = uiState.selectedJaapName.ifEmpty { stringResource(R.string.select_a_jaap) },
+                value = uiState.selectedJaapName.ifEmpty {
+                    stringResource(R.string.select_a_jaap)
+                },
                 onValueChange = {},
-                label = { Text(stringResource(R.string.for_which_jaap)) },
-                shape = RoundedCornerShape(12.dp),
-                textStyle = TextStyle(fontSize = 18.sp),
-                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = isExpanded) }
+                label = {
+                    Text(
+                        stringResource(R.string.for_which_jaap)
+                    )
+                },
+                leadingIcon = {
+                    Icon(
+                        imageVector = Icons.Outlined.SelfImprovement,
+                        contentDescription = null
+                    )
+                },
+                trailingIcon = {
+                    ExposedDropdownMenuDefaults.TrailingIcon(
+                        expanded = isExpanded
+                    )
+                },
+                isError = uiState.jaapError != null,
+                supportingText = {
+                    uiState.jaapError?.let {
+                        Text(it)
+                    }
+                },
+                shape = RoundedCornerShape(14.dp),
+                singleLine = true
             )
 
             ExposedDropdownMenu(
                 expanded = isExpanded,
-                onDismissRequest = { isExpanded = false }
+                onDismissRequest = {
+                    isExpanded = false
+                }
             ) {
                 mantras.forEach { mantra ->
                     DropdownMenuItem(
-                        text = { Text(mantra.name) },
+                        text = {
+                            Text(
+                                text = mantra.name,
+                                style = MaterialTheme.typography.bodyLarge
+                            )
+                        },
+                        leadingIcon = {
+                            Icon(
+                                imageVector = Icons.Outlined.SelfImprovement,
+                                contentDescription = null
+                            )
+                        },
                         onClick = {
-                            viewModel.onJaapSelected(mantra.id, mantra.name)
+                            viewModel.onJaapSelected(
+                                mantra.id,
+                                mantra.name
+                            )
                             isExpanded = false
                         }
                     )
                 }
             }
         }
-        uiState.jaapError?.let {
-            Text(it, color = MaterialTheme.colorScheme.error)
-        }
-        // Text field for Goal Name
+
+        // ---------------------------------------------------------
+        // Goal Name
+        // ---------------------------------------------------------
+
         OutlinedTextField(
             value = uiState.goalName,
             onValueChange = viewModel::onGoalNameChange,
-            label = { Text(stringResource(R.string.goal_name)) },
+            label = {
+                Text(
+                    stringResource(R.string.goal_name)
+                )
+            },
+            leadingIcon = {
+                Icon(
+                    imageVector = Icons.Outlined.Flag,
+                    contentDescription = null
+                )
+            },
             singleLine = true,
             isError = uiState.nameError != null,
             supportingText = {
-                uiState.nameError?.let { Text(it) }
+                uiState.nameError?.let {
+                    Text(it)
+                }
             },
             modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(12.dp),
-            textStyle = TextStyle(fontSize = 18.sp)
+            shape = RoundedCornerShape(14.dp)
         )
 
-        // Text field for Target Malas
+        // ---------------------------------------------------------
+        // Target Malas
+        // ---------------------------------------------------------
+
         OutlinedTextField(
             value = uiState.targetMalas,
             onValueChange = viewModel::onTargetMalasChange,
-            label = { Text(stringResource(R.string.target_malas)) },
+            label = {
+                Text(
+                    stringResource(R.string.target_malas)
+                )
+            },
+            leadingIcon = {
+                Icon(
+                    imageVector = Icons.Outlined.Repeat,
+                    contentDescription = null
+                )
+            },
             singleLine = true,
             modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(12.dp),
-            textStyle = TextStyle(fontSize = 18.sp),
+            shape = RoundedCornerShape(14.dp),
             isError = uiState.targetMalasError != null,
             supportingText = {
-                uiState.targetMalasError?.let { Text(it) }
+                uiState.targetMalasError?.let {
+                    Text(it)
+                }
             },
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+            keyboardOptions = KeyboardOptions(
+                keyboardType = KeyboardType.Number
+            )
         )
+
+        // ---------------------------------------------------------
+        // End Date
+        // ---------------------------------------------------------
+
         Box(
-            modifier = Modifier
-                .fillMaxWidth()
+            modifier = Modifier.fillMaxWidth()
         ) {
             OutlinedTextField(
-                value = DateUtils.formatMillisToDate(uiState.endDate),
+                value = DateUtils.formatMillisToDate(
+                    uiState.endDate
+                ),
                 onValueChange = {},
-                label = { Text(stringResource(R.string.target_end_date)) },
+                label = {
+                    Text(
+                        stringResource(R.string.target_end_date)
+                    )
+                },
+                leadingIcon = {
+                    Icon(
+                        imageVector = Icons.Outlined.CalendarToday,
+                        contentDescription = null
+                    )
+                },
                 readOnly = true,
                 enabled = true,
                 isError = uiState.dateError != null,
                 modifier = Modifier.fillMaxWidth(),
-                trailingIcon = {
-                    Icon(
-                        imageVector = Icons.Default.DateRange,
-                        contentDescription = "Pick date"
-                    )
-                },
+                shape = RoundedCornerShape(14.dp),
                 supportingText = {
                     uiState.dateError?.let {
-                        Text(it, color = MaterialTheme.colorScheme.error)
+                        Text(it)
                     }
                 }
             )
 
-            // ✅ THIS captures clicks reliably
             Box(
                 modifier = Modifier
                     .matchParentSize()
                     .clickable(
-                        interactionSource = remember { MutableInteractionSource() },
-                        indication = null // no ripple on top
+                        interactionSource = remember {
+                            MutableInteractionSource()
+                        },
+                        indication = null
                     ) {
                         showDatePickerDialog = true
                     }
             )
         }
 
+        Spacer(modifier = Modifier.height(4.dp))
 
-        ElevatedButton(
+        // ---------------------------------------------------------
+        // Submit
+        // ---------------------------------------------------------
+
+        Button(
             enabled = uiState.isFormValid,
             onClick = {
                 viewModel.submitGoal {
                     navController.popBackStack()
                 }
             },
-            shape = RoundedCornerShape(12.dp),
             modifier = Modifier
-                .padding(start = 8.dp)
-                .align(Alignment.CenterHorizontally),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = MaterialTheme.colorScheme.primary
+                .fillMaxWidth()
+                .height(52.dp),
+            shape = RoundedCornerShape(14.dp),
+            contentPadding = PaddingValues(
+                horizontal = 24.dp
             )
         ) {
+            Icon(
+                imageVector = Icons.Outlined.Check,
+                contentDescription = null,
+                modifier = Modifier.size(20.dp)
+            )
+
+            Spacer(modifier = Modifier.width(8.dp))
+
             Text(
-                "Submit",
-                style = MaterialTheme.typography.bodyLarge.copy(
-                    fontWeight = FontWeight.SemiBold
-                )
+                text = stringResource(R.string.save),
+                style = MaterialTheme.typography.labelLarge,
+                fontWeight = FontWeight.SemiBold
             )
-        }
-        if (showDatePickerDialog) {
-            DatePickerDialog(
-                onDismissRequest = { showDatePickerDialog = false },
-                confirmButton = {
-                    Button(onClick = {
-                        viewModel.onDateSelected(endDatePickerState.selectedDateMillis)
-                        showDatePickerDialog = false
-                    }) {
-                        Text(stringResource(R.string.confirm))
-                    }
-                },
-                dismissButton = {
-                    Button(onClick = { showDatePickerDialog = false }) {
-                        Text(stringResource(R.string.cancel))
-                    }
-                }
-            )
-            {
-                DatePicker(state = endDatePickerState)
-            }
         }
 
+        Spacer(modifier = Modifier.height(8.dp))
     }
 
-}
+    // -------------------------------------------------------------
+    // Date Picker
+    // -------------------------------------------------------------
 
+    if (showDatePickerDialog) {
+        DatePickerDialog(
+            onDismissRequest = {
+                showDatePickerDialog = false
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        viewModel.onDateSelected(
+                            endDatePickerState.selectedDateMillis
+                        )
+                        showDatePickerDialog = false
+                    }
+                ) {
+                    Text(
+                        text = stringResource(R.string.confirm),
+                        fontWeight = FontWeight.SemiBold
+                    )
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = {
+                        showDatePickerDialog = false
+                    }
+                ) {
+                    Text(
+                        text = stringResource(R.string.cancel)
+                    )
+                }
+            }
+        ) {
+            DatePicker(
+                state = endDatePickerState
+            )
+        }
+    }
+}
 
