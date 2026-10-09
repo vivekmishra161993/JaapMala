@@ -46,6 +46,7 @@ import com.mtt.jaapmala.data.local.db.BackupPrefs
 import com.mtt.jaapmala.data.local.db.DatabaseManager
 import com.mtt.jaapmala.domain.model.ThemeOption
 import com.mtt.jaapmala.domain.repository.SettingsRepository
+import com.mtt.jaapmala.util.AppLogger
 import com.mtt.jaapmala.util.DateUtils
 import com.mtt.jaapmala.util.GoalType
 import com.mtt.presentation.ui.screens.Screens
@@ -92,7 +93,7 @@ class MainActivity : ComponentActivity() {
             }
             val startDestination =
                 if (showOnboarding) Screens.OnBoardingScreen.route else BottomTabItem.Jaaps.route
-
+            val logs = AppLogger.readLogs(this)
             // Declare launchers first
             lateinit var backupManager: DatabaseManager
             var selectedTab by rememberSaveable { mutableIntStateOf(GoalType.LIFETIME.type) }

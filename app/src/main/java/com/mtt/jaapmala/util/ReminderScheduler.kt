@@ -7,6 +7,7 @@ import android.content.Intent
 import com.mtt.presentation.ui.ReminderReceiver
 import dagger.hilt.android.qualifiers.ApplicationContext
 import java.util.Calendar
+import java.util.Date
 import javax.inject.Inject
 
 class ReminderScheduler @Inject constructor(
@@ -47,20 +48,49 @@ class ReminderScheduler @Inject constructor(
                     PendingIntent.FLAG_IMMUTABLE
         )
 
-        alarmManager.set(
+        AppLogger.log(
+            context,
+            "ReminderScheduler",
+            "BEFORE setAndAllowWhileIdle: " +
+                    "trigger=${calendar.time} " +
+                    "millis=${calendar.timeInMillis} " +
+                    "now=${Date()}"
+        )
+
+        alarmManager.setAndAllowWhileIdle(
             AlarmManager.RTC_WAKEUP,
             calendar.timeInMillis,
             pendingIntent
         )
+
+        AppLogger.log(
+            context,
+            "ReminderScheduler",
+            "AFTER setAndAllowWhileIdle: " +
+                    "trigger=${calendar.time}"
+        )
     }
 
     fun cancelDailyReminder() {
+
         val alarmManager =
             context.getSystemService(
                 Context.ALARM_SERVICE
             ) as AlarmManager
 
+        AppLogger.log(
+            context,
+            "ReminderScheduler",
+            "CANCEL daily reminder called"
+        )
+
         alarmManager.cancel(createPendingIntent())
+
+        AppLogger.log(
+            context,
+            "ReminderScheduler",
+            "CANCEL daily reminder completed"
+        )
     }
 
     private fun createPendingIntent(): PendingIntent {
