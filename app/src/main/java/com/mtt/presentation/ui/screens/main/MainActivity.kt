@@ -132,6 +132,8 @@ class MainActivity : ComponentActivity() {
                 Screens.Settings.route,
                 Screens.DailyGoalHistoryScreen.route,
                 Screens.PracticeInsightsScreen.route,
+                Screens.DailyGoalHistoryScreen.route,
+                Screens.PracticeInsightsScreen.route,
                 Screens.AddDailyGoalScreen.route,
                 Screens.JaapHistoryScreen.route
             )
@@ -428,6 +430,7 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
+
 }
 
 
