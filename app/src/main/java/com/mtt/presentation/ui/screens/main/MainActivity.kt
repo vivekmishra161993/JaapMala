@@ -190,12 +190,12 @@ class MainActivity : ComponentActivity() {
                     }
 
                     Screens.PracticeInsightsScreen.route ->{
-                        viewModel.onIntent(HomeIntent.UpdateTopBar("Practice Insights", emptyList()))
+                        viewModel.onIntent(HomeIntent.UpdateTopBar(getString(R.string.practice_insights), emptyList()))
 
                     }
 
                     Screens.DailyGoalHistoryScreen.route ->{
-                        viewModel.onIntent(HomeIntent.UpdateTopBar("Daily Goal History",emptyList()))
+                        viewModel.onIntent(HomeIntent.UpdateTopBar(getString(R.string.daily_goal_history),emptyList()))
                     }
                 }
             }
