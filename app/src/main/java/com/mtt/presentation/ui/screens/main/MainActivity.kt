@@ -131,7 +131,9 @@ class MainActivity : ComponentActivity() {
                 Screens.OnBoardingScreen.route,
                 Screens.Settings.route,
                 Screens.DailyGoalHistoryScreen.route,
-                Screens.PracticeInsightsScreen.route
+                Screens.PracticeInsightsScreen.route,
+                Screens.AddDailyGoalScreen.route,
+                Screens.JaapHistoryScreen.route
             )
             val topLevelRoutes = remember {
                 setOf(
