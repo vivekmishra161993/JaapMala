@@ -1,9 +1,15 @@
 package com.mtt.jaapmala.domain.model
-enum class ThemeOption(val displayName: String) {
-    SYSTEM("System Default"),
-    LIGHT("Light"),
-    DARK("Dark"),
-    MIDNIGHT_BLUE("Midnight Blue"),
-    FOREST_EMERALD("Forest Emerald"),
-    LOTUS_PINK("Lotus Pink")
+
+import androidx.annotation.StringRes
+import com.mtt.jaapmala.R
+
+enum class ThemeOption(
+    @StringRes val displayNameRes: Int
+) {
+    SYSTEM(R.string.system_default),
+    LIGHT(R.string.light),
+    DARK(R.string.dark),
+    MIDNIGHT_BLUE(R.string.midnight_blue),
+    FOREST_EMERALD(R.string.forest_emerald),
+    LOTUS_PINK(R.string.lotus_pink)
 }

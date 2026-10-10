@@ -1,5 +1,6 @@
 package com.mtt.presentation.ui.screens.main
 
+//import com.mtt.presentation.ui.screens.add_goal.AddGoalScreen
 import android.annotation.SuppressLint
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -13,6 +14,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.FloatingActionButton
@@ -23,13 +25,15 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavType
@@ -42,14 +46,20 @@ import com.mtt.jaapmala.data.local.db.BackupPrefs
 import com.mtt.jaapmala.data.local.db.DatabaseManager
 import com.mtt.jaapmala.domain.model.ThemeOption
 import com.mtt.jaapmala.domain.repository.SettingsRepository
+import com.mtt.jaapmala.util.AppLogger
+import com.mtt.jaapmala.util.DateUtils
+import com.mtt.jaapmala.util.GoalType
 import com.mtt.presentation.ui.screens.Screens
+import com.mtt.presentation.ui.screens.add_daily_goals.AddDailyGoalScreen
 import com.mtt.presentation.ui.screens.add_goal.AddGoalScreen
-//import com.mtt.presentation.ui.screens.add_goal.AddGoalScreen
 import com.mtt.presentation.ui.screens.app_bar.TopAppBarWithMenu
 import com.mtt.presentation.ui.screens.app_bar.TopBarAction
+import com.mtt.presentation.ui.screens.daily_goal_history.DailyGoalHistoryScreen
 import com.mtt.presentation.ui.screens.goals.GoalsScreen
 import com.mtt.presentation.ui.screens.history.JaapHistoryScreen
 import com.mtt.presentation.ui.screens.home.AddMantraDialog
+import com.mtt.presentation.ui.screens.home.HomeEffect
+import com.mtt.presentation.ui.screens.home.HomeIntent
 import com.mtt.presentation.ui.screens.home.HomeScreen
 import com.mtt.presentation.ui.screens.home.HomeViewModel
 import com.mtt.presentation.ui.screens.jaap.JaapDetailScreen
@@ -83,9 +93,10 @@ class MainActivity : ComponentActivity() {
             }
             val startDestination =
                 if (showOnboarding) Screens.OnBoardingScreen.route else BottomTabItem.Jaaps.route
-
+            val logs = AppLogger.readLogs(this)
             // Declare launchers first
             lateinit var backupManager: DatabaseManager
+            var selectedTab by rememberSaveable { mutableIntStateOf(GoalType.LIFETIME.type) }
 
             val backupLauncher = rememberLauncherForActivityResult(
                 contract = ActivityResultContracts.CreateDocument("application/octet-stream")
@@ -99,7 +110,7 @@ class MainActivity : ComponentActivity() {
                 if (uri != null) {
                     val success = backupManager.handleRestore(uri)
                     if (success) {
-                        viewModel.refreshData()
+                        viewModel.onIntent(HomeIntent.RefreshData)
                     }
                 }
             }
@@ -117,7 +128,8 @@ class MainActivity : ComponentActivity() {
                 BottomTabItem.Goals.route,
                 Screens.AddGoalScreen.route,
                 Screens.OnBoardingScreen.route,
-                Screens.Settings.route
+                Screens.Settings.route,
+                Screens.DailyGoalHistoryScreen.route
             )
             val topLevelRoutes = remember {
                 setOf(
@@ -129,30 +141,62 @@ class MainActivity : ComponentActivity() {
             }
             val shouldShowBackButton =
                 currentDestination !in topLevelRoutes && currentDestination != null
-            val topBarState by viewModel.topBarState.collectAsState()
-            var toolbarTitle by remember { mutableStateOf("Jaap Mala") }
-            toolbarTitle = when (currentDestination) {
-                Screens.HomeScreen.route,
-                BottomTabItem.Jaaps.route -> "Jaap Mala"
+            val state by viewModel.state.collectAsState()
 
-                BottomTabItem.Goals.route -> "Goals"
-                Screens.Settings.route -> "Settings"
-                Screens.AddGoalScreen.route -> "Add Goal"
-                else -> toolbarTitle
+            LaunchedEffect(currentDestination) {
+                when (currentDestination) {
+                    Screens.HomeScreen.route, BottomTabItem.Jaaps.route -> {
+                        viewModel.onIntent(HomeIntent.InitializeHome)
+                        viewModel.onIntent(
+                            HomeIntent.UpdateTopBar(
+                                "Jaap Mala",
+                                listOf(
+                                    TopBarAction.Backup,
+                                    TopBarAction.Restore,
+                                    TopBarAction.Settings
+                                )
+                            )
+                        )
+                    }
+
+                    BottomTabItem.Goals.route -> {
+                        viewModel.onIntent(HomeIntent.UpdateTopBar("Goals", emptyList()))
+                    }
+
+                    Screens.Settings.route -> {
+                        viewModel.onIntent(HomeIntent.UpdateTopBar("Settings", emptyList()))
+                    }
+
+                    Screens.AddGoalScreen.route -> {
+                        viewModel.onIntent(HomeIntent.UpdateTopBar("Add Goal", emptyList()))
+                    }
+
+                    Screens.AddJaapDialog.route -> {
+                        viewModel.onIntent(HomeIntent.UpdateTopBar("Add Mantra", emptyList()))
+                    }
+
+                    Screens.JaapHistoryScreen.route -> {
+                        viewModel.onIntent(HomeIntent.UpdateTopBar("History", emptyList()))
+                    }
+
+                    Screens.AddDailyGoalScreen.route ->{
+                        viewModel.onIntent(HomeIntent.UpdateTopBar("Add Daily Goal",emptyList()))
+                    }
+                }
             }
-            topBarState.title = toolbarTitle
+
             LaunchedEffect(Unit) {
-                viewModel.topBarEvent.collect { action ->
+                viewModel.effect.collect { action ->
                     when (action) {
-                        is TopBarAction.Backup -> {
+                        is HomeEffect.NavigateToBackup -> {
                             backupManager.backupDatabase()
                         }
 
-                        is TopBarAction.Restore -> {
+                        is HomeEffect.NavigateToRestore -> {
                             backupManager.restoreDatabase()
                         }
 
-                        is TopBarAction.Settings -> {
+                        is HomeEffect.NavigateToSettings -> {
                             navController.navigate(Screens.Settings.route)
                         }
 
@@ -167,11 +211,11 @@ class MainActivity : ComponentActivity() {
                     contentColor = MaterialTheme.colorScheme.background,
                     topBar = {
                         TopAppBarWithMenu(
-                            topBarState,
+                            state.topBarState,
                             showBackButton = shouldShowBackButton,
                             onBack = { navController.navigateUp() },
                             onActionSelected = { action ->
-                                viewModel.onTopBarAction(action, this@MainActivity)
+                                viewModel.onIntent(HomeIntent.OnTopBarAction(action, this))
                             },
                             showOverFlowMenu = currentDestination !in hideMenuOnRoutes
                         )
@@ -198,13 +242,17 @@ class MainActivity : ComponentActivity() {
                                 onClick = {
                                     if (currentDestination == BottomTabItem.Jaaps.route) {
                                         navController.navigate(Screens.AddJaapDialog.route)
-                                    } else {
+                                    } else if (selectedTab == GoalType.LIFETIME.type) {
                                         navController.navigate(Screens.AddGoalScreen.route)
-
+                                    } else if (selectedTab == GoalType.DAILY.type) {
+                                        navController.navigate(Screens.AddDailyGoalScreen.route)
+                                    } else {
+                                        navController.navigate(Screens.AddJaapDialog.route)
                                     }
                                 },
                                 containerColor = MaterialTheme.colorScheme.primary,
-                                contentColor = Color.White
+                                contentColor = Color.White,
+                                modifier = Modifier.padding(bottom = 16.dp)
                             ) {
                                 Icon(Icons.Filled.Add, "Add")
                             }
@@ -264,9 +312,7 @@ class MainActivity : ComponentActivity() {
                         ) { backStackEntry ->
                             val jaapId = backStackEntry.arguments?.getInt("jaapId") ?: -1
                             JaapDetailScreen(
-                                jaapId = jaapId, navController, setTitle = { title ->
-                                    toolbarTitle = title
-                                }, padding = innerPadding,
+                                jaapId = jaapId, navController, padding = innerPadding,
                                 homeViewModel = viewModel
                             )
                         }
@@ -275,9 +321,18 @@ class MainActivity : ComponentActivity() {
                                 onDismiss = { navController.popBackStack() },
                                 onSubmit = { name, size ->
                                     navController.popBackStack()
-                                    viewModel.addMantra(name, size)
+                                    viewModel.onIntent(
+                                        HomeIntent.AddMantra(
+                                            name,
+                                            DateUtils.getTodayDate(),
+                                            size
+                                        )
+                                    )
                                 }
                             )
+                        }
+                        composable(Screens.AddDailyGoalScreen.route) {
+                            AddDailyGoalScreen(paddingValues = innerPadding,navController)
                         }
                         composable(
                             Screens.JaapHistoryScreen.route,
@@ -287,9 +342,10 @@ class MainActivity : ComponentActivity() {
                             val detailViewModel: JaapDetailViewModel = hiltViewModel()
                             val jaapId = backStackEntry.arguments?.getInt("jaapId") ?: -1
                             JaapHistoryScreen(
-                                jaapId,
+                                jaapId = jaapId,
                                 viewModel = detailViewModel,
-                                onBack = { navController.popBackStack() }
+                                homeViewModel = viewModel,
+                                padding = innerPadding
                             )
                         }
                         composable(Screens.Settings.route) {
@@ -305,10 +361,36 @@ class MainActivity : ComponentActivity() {
                         }
 
                         composable(BottomTabItem.Goals.route) {
-                            GoalsScreen(paddingValues = innerPadding)
+                            GoalsScreen(
+                                paddingValues = innerPadding,
+                                selectedGoalTab = selectedTab,
+                                onTabSelected = {
+                                    selectedTab = it
+                                },
+                                navController =navController
+                            )
                         }
                         composable(Screens.AddGoalScreen.route) {
                             AddGoalScreen(paddingValues = innerPadding, navController)
+                        }
+                        composable(
+                            route = Screens.DailyGoalHistoryScreen.route,
+                            arguments = listOf(
+                                navArgument("goalId") {
+                                    type = NavType.IntType
+                                }
+                            )
+                        ) { backStackEntry ->
+
+                            val goalId = backStackEntry
+                                .arguments
+                                ?.getInt("goalId")
+                                ?: return@composable
+
+                            DailyGoalHistoryScreen(
+                                goalId = goalId,
+                                padding = innerPadding
+                            )
                         }
                     }
                 }

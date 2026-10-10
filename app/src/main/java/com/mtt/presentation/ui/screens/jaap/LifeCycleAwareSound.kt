@@ -13,11 +13,11 @@ fun LifeCycleAwareSound(viewModel: JaapDetailViewModel) {
     DisposableEffect(lifecycleOwner) {
         val observer = object : DefaultLifecycleObserver {
             override fun onPause(owner: LifecycleOwner) {
-                viewModel.onAppPaused()
+                viewModel.onIntent(JaapDetailIntent.OnAppBackgrounded)
             }
 
             override fun onResume(owner: LifecycleOwner) {
-                viewModel.onAppResumed()
+                viewModel.onIntent(JaapDetailIntent.OnAppForegrounded)
             }
         }
 

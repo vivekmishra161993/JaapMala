@@ -30,7 +30,9 @@ class DatabaseProvider @Inject constructor(
                 MIGRATION_2_3,
                 MIGRATION_3_4,
                 MIGRATION_4_5,
-                MIGRATION_GOAL_REMOVE_JAAP_NAME_5_6
+                MIGRATION_GOAL_REMOVE_JAAP_NAME_5_6,
+                MIGRATION_6_7,
+                MIGRATION_7_8
             )
             .build()
     }

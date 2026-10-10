@@ -12,7 +12,9 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.mtt.jaapmala.R
 
 @Composable
 fun WhatsNewDialog(
@@ -24,12 +26,12 @@ fun WhatsNewDialog(
         onDismissRequest = onDismiss,
         confirmButton = {
             TextButton(onClick = onDismiss) {
-                Text("Got it")
+                Text(stringResource(R.string.got_it))
             }
         },
         title = {
             Text(
-                text = "What’s New",
+                text = stringResource(R.string.what_s_new),
                 style = MaterialTheme.typography.titleLarge
             )
         },
@@ -40,7 +42,7 @@ fun WhatsNewDialog(
             ) {
 
                 Text(
-                    text = "Version $versionName",
+                    text = stringResource(R.string.version, versionName),
                     style = MaterialTheme.typography.labelLarge,
                     color = MaterialTheme.colorScheme.primary
                 )

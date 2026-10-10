@@ -4,8 +4,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.mtt.jaapmala.data.local.entity.GoalEntity
 import com.mtt.jaapmala.data.local.entity.GoalStatus
-import com.mtt.jaapmala.domain.usecase.AddGoalUseCase
-import com.mtt.jaapmala.domain.usecase.GetMantrasUseCase
+import com.mtt.jaapmala.domain.usecase.goals.AddGoalUseCase
+import com.mtt.jaapmala.domain.usecase.jaap.GetMantrasUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted

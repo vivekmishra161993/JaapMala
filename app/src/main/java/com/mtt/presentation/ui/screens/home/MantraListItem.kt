@@ -27,9 +27,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.mtt.jaapmala.R
 import com.mtt.jaapmala.data.model.MantraDto
 import com.mtt.jaapmala.util.formatIndianNumber
 
@@ -47,7 +49,7 @@ fun MantraListItem(
 
     if (showDeleteDialog) {
         DeleteConfirmationDialog(
-            message = "Are you sure you want to delete '${mantraDto.name}'?",
+            message = stringResource(R.string.are_you_sure_you_want_to_delete, mantraDto.name),
             onConfirm = {
                 onDeleteMantra()
                 showDeleteDialog = false
@@ -112,7 +114,7 @@ fun MantraListItem(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 StatsColumn(
-                    title = "Today",
+                    title = stringResource(R.string.today),
                     value = formatIndianNumber(mantraDto.todayCount),
                     modifier = Modifier.weight(1f)
                 )
@@ -132,13 +134,13 @@ fun MantraListItem(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 StatsColumn(
-                    title = "Total",
+                    title = stringResource(R.string.total),
                     value = formatIndianNumber(mantraDto.lifetimeCount),
                     modifier = Modifier.weight(1f)
                 )
 
                 StatsColumn(
-                    title = "Total ${mantraDto.malaSize}×",
+                    title = stringResource(R.string.total_x, mantraDto.malaSize),
                     value = formatIndianNumber(mantraDto.lifetimeMalaCount),
                     modifier = Modifier.weight(1f)
                 )
@@ -184,7 +186,7 @@ private fun StatsColumn(
 
 @Composable
 fun DeleteConfirmationDialog(
-    title: String = "Delete Jaap",
+    title: String = stringResource(R.string.delete_jaap),
     message: String,
     onConfirm: () -> Unit,
     onDismiss: () -> Unit
@@ -195,12 +197,12 @@ fun DeleteConfirmationDialog(
         text = { Text(message) },
         confirmButton = {
             TextButton(onClick = onConfirm) {
-                Text("Delete", color = MaterialTheme.colorScheme.error)
+                Text(stringResource(R.string.delete), color = MaterialTheme.colorScheme.error)
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Cancel")
+                Text(stringResource(R.string.cancel))
             }
         }
     )

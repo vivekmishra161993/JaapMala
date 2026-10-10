@@ -5,7 +5,7 @@ import com.mtt.jaapmala.data.local.entity.JaapEntity
 import com.mtt.jaapmala.data.model.MantraDto
 import com.mtt.jaapmala.domain.repository.JaapRepository
 import com.mtt.jaapmala.util.DateUtils
-import com.mtt.jaapmala.util.toMantraDto
+import com.mtt.jaapmala.data.mapper.toMantraDto
 import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 

@@ -24,8 +24,10 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.mtt.jaapmala.R
 
 @Composable
 fun ProgressContent(
@@ -43,7 +45,8 @@ fun ProgressContent(
         // --- Summary Card ---
         Card(
             modifier = Modifier
-                .fillMaxWidth().padding(start = 10.dp, end = 10.dp),
+                .fillMaxWidth()
+                .padding(start = 10.dp, end = 10.dp),
             shape = RoundedCornerShape(10.dp),
             elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
@@ -55,7 +58,7 @@ fun ProgressContent(
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 Text(
-                    text = "Overall Summary",
+                    text = stringResource(R.string.overall_summary),
                     style = MaterialTheme.typography.titleLarge.copy(
                         color = MaterialTheme.colorScheme.primary,
                         fontWeight = FontWeight.SemiBold
@@ -67,9 +70,9 @@ fun ProgressContent(
                     color = MaterialTheme.colorScheme.primary.copy(alpha = 0.4f)
                 )
 
-                SummaryRow(label = "Total Jaaps", value = data.totalJaaps.toString())
-                SummaryRow(label = "Total Count", value = data.totalCount.toString())
-                SummaryRow(label = "Total Malas", value = data.totalMalas.toString())
+                SummaryRow(label = stringResource(R.string.total_jaaps), value = data.totalJaaps.toString())
+                SummaryRow(label = stringResource(R.string.total_count), value = data.totalCount.toString())
+                SummaryRow(label = stringResource(R.string.total_malas), value = data.totalMalas.toString())
             }
         }
 

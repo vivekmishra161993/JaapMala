@@ -13,5 +13,10 @@ sealed class Screens(val route: String) {
     }
     data object AddGoalScreen :Screens("add_goal")
     object Settings : Screens("settings")
+    data object  AddDailyGoalScreen:Screens("add_daily_goal")
+    data object DailyGoalHistoryScreen:Screens("daily_goal_history/{goalId}"){
+        fun passGoalId(id:Int): String ="daily_goal_history/$id"
+    }
+
 
 }

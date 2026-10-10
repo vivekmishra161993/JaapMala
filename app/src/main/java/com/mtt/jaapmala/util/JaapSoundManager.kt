@@ -78,8 +78,8 @@ class JaapSoundManager @Inject constructor(
 
         soundPool.play(
             tickSoundId,
-            0.8f,
-            0.8f,
+            1f,
+            1f,
             1,
             0,
             1f
@@ -163,10 +163,8 @@ class JaapSoundManager @Inject constructor(
     }
 
     private fun abandonAudioFocus() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            audioFocusRequest?.let {
-                audioManager.abandonAudioFocusRequest(it)
-            }
+        audioFocusRequest?.let {
+            audioManager.abandonAudioFocusRequest(it)
         }
     }
 

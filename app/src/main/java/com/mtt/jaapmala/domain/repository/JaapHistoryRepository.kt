@@ -1,6 +1,6 @@
 package com.mtt.jaapmala.domain.repository
 
-import com.mtt.jaapmala.data.local.entity.JaapHistoryEntity
+import com.mtt.jaapmala.domain.model.JaapHistory
 import kotlinx.coroutines.flow.Flow
 
 interface JaapHistoryRepository {
@@ -12,5 +12,15 @@ interface JaapHistoryRepository {
         malaCount: Int
     )
 
-    fun getHistoryForJaap(jaapId: Int): Flow<List<JaapHistoryEntity>>
+    fun getHistoryForJaap(jaapId: Int): Flow<List<JaapHistory>>
+    fun getHistoryForDate(
+        jaapId: Int,
+        date: String
+    ): Flow<JaapHistory?>
+
+    fun getHistoryBetweenDates(
+        jaapId: Int,
+        startDate: String,
+        endDate: String
+    ): Flow<List<JaapHistory>>
 }

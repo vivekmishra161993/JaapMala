@@ -1,6 +1,7 @@
 package com.mtt.jaapmala.domain.usecase
 
 import com.mtt.jaapmala.domain.repository.JaapRepository
+import com.mtt.jaapmala.domain.usecase.jaap.ResetTodayCountsUseCase
 import io.mockk.coVerify
 import io.mockk.mockk
 import kotlinx.coroutines.test.runTest

@@ -22,10 +22,12 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.mtt.jaapmala.R
 import kotlinx.coroutines.launch
 
 @Composable
@@ -51,19 +53,19 @@ fun OnboardingScreen(
             ) {
                 Image(
                     painter = painterResource(id = item.imageRes),
-                    contentDescription = item.title,
+                    contentDescription = stringResource(item.titleRes),
                     modifier = Modifier.size(200.dp)
                 )
                 Spacer(modifier = Modifier.height(24.dp))
                 Text(
-                    item.title,
+                    stringResource(item.titleRes),
                     fontSize = 24.sp,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurface
                 )
                 Spacer(modifier = Modifier.height(12.dp))
                 Text(
-                    item.description,
+                    stringResource(item.descriptionRes),
                     textAlign = TextAlign.Center,
                     color = MaterialTheme.colorScheme.onSurface
                 )
@@ -78,7 +80,7 @@ fun OnboardingScreen(
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             TextButton(onClick = { onFinish() }) {
-                Text("Skip")
+                Text(stringResource(R.string.skip))
             }
 
             Button(onClick = {
@@ -90,7 +92,9 @@ fun OnboardingScreen(
                     }
                 }
             }) {
-                Text(if (pagerState.currentPage == onboardingPages.lastIndex) "Get Started" else "Next")
+                Text(if (pagerState.currentPage == onboardingPages.lastIndex) stringResource(R.string.get_started) else stringResource(
+                    R.string.next
+                ))
             }
         }
     }

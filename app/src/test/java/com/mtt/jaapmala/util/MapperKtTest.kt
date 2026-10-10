@@ -1,6 +1,8 @@
 package com.mtt.jaapmala.util
 
 import com.mtt.jaapmala.data.local.entity.JaapEntity
+import com.mtt.jaapmala.data.mapper.toJaapEntity
+import com.mtt.jaapmala.data.mapper.toMantraDto
 import com.mtt.jaapmala.data.model.MantraDto
 import junit.framework.TestCase.assertEquals
 import org.junit.Test

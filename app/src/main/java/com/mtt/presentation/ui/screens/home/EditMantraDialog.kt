@@ -20,6 +20,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -27,6 +28,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import com.mtt.jaapmala.R
 
 @Composable
 fun EditMantraDialog(
@@ -57,7 +59,7 @@ fun EditMantraDialog(
                     .fillMaxWidth()
             ) {
                 Text(
-                    text = "Edit Mantra",
+                    text = stringResource(R.string.edit_mantra),
                     style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                     modifier = Modifier
                         .fillMaxWidth()
@@ -68,7 +70,7 @@ fun EditMantraDialog(
                 OutlinedTextField(
                     value = name,
                     onValueChange = { name = it },
-                    placeholder = { Text("Enter mantra name") },
+                    placeholder = { Text(stringResource(R.string.enter_mantra_name)) },
                     singleLine = true,
                     modifier = Modifier
                         .fillMaxWidth()
@@ -88,7 +90,7 @@ fun EditMantraDialog(
                             .weight(1f)
                     ) {
                         Text(
-                            "Cancel",
+                            stringResource(R.string.cancel),
                             style = MaterialTheme.typography.bodyLarge.copy(
                                 fontWeight = FontWeight.SemiBold,
                                 color = MaterialTheme.colorScheme.primary
@@ -109,7 +111,7 @@ fun EditMantraDialog(
                         )
                     ) {
                         Text(
-                            "Save",
+                            stringResource(R.string.submit),
                             style = MaterialTheme.typography.bodyLarge.copy(
                                 fontWeight = FontWeight.SemiBold
                             )

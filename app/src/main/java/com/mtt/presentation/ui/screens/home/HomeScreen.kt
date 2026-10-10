@@ -32,12 +32,14 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import com.mtt.jaapmala.R
+import com.mtt.jaapmala.data.mapper.toJaapEntity
 import com.mtt.jaapmala.data.model.MantraDto
-import com.mtt.jaapmala.util.toJaapEntity
 import com.mtt.presentation.ui.screens.Screens
 import com.mtt.presentation.ui.screens.whats_new.AppVersionProvider
 import com.mtt.presentation.ui.screens.whats_new.WhatsNewDialog
@@ -50,39 +52,47 @@ fun HomeScreen(
     onExit: () -> Unit,
     paddingValues: PaddingValues
 ) {
-    val showExitDialog by viewModel.showExitDialog.collectAsState()
-    val uiState = viewModel.uiState.collectAsState()
-    val showDialog by viewModel.showWhatsNew.collectAsState()
-    val changelogItems by viewModel.changelogItems.collectAsState()
-    val context = LocalContext.current
-    val versionName = remember {
-        AppVersionProvider(context).getVersionName()
-    }
+    val state by viewModel.state.collectAsState()
+
 
     LaunchedEffect(Unit) {
-        viewModel.setHomeScreenActions()
+        viewModel.onIntent(HomeIntent.InitializeHome)
+
+        viewModel.effect.collect { effect ->
+            when (effect) {
+                is HomeEffect.CloseApp -> {
+                    onExit()
+                }
+
+                is HomeEffect.NavigateToJaapDetail -> {
+                    navController.navigate(Screens.JaapDetailScreen.passJaapId(effect.jaapId))
+                }
+
+                else -> {}
+            }
+        }
     }
     // Intercept back press
     BackHandler {
-        viewModel.onBackPressed()
+        viewModel.onIntent(HomeIntent.OnBackPressed)
     }
-    // Exit dialog
-    if (showExitDialog) {
-        ExitDialog(viewModel, onExit)
-    }
-    if (showDialog) {
-        WhatsNewDialog(
-            versionName = versionName,
-            items = changelogItems,
-            onDismiss = { viewModel.onWhatsNewDismissed() }
-        )
+
+    HomeContent(state,paddingValues,viewModel::onIntent)
+
+}
+@Composable
+fun HomeContent(state: HomeState, paddingValues: PaddingValues,onIntent: (HomeIntent) -> Unit) {
+    val context = LocalContext.current
+
+    val versionName = remember {
+        AppVersionProvider(context).getVersionName()
     }
     Crossfade(
-        targetState = uiState,
+        targetState = state.mantraList,
         animationSpec = tween(durationMillis = 500, easing = LinearEasing),
         label = "Home-crossfade"
-    ) { state ->
-        when (state.value) {
+    ) { mantraListState ->
+        when (mantraListState) {
             is HomeUIState.Loading -> {
                 LoadingPlaceholderView(modifier = Modifier.padding(paddingValues))
             }
@@ -92,37 +102,47 @@ fun HomeScreen(
             }
 
             is HomeUIState.Success -> {
-                val mantras = (uiState.value as HomeUIState.Success).mantras
-                MantraList(mantras, navController, viewModel,paddingValues)
-
+                val mantras = mantraListState.mantras
+                MantraList(mantras, onIntent, paddingValues)
             }
         }
+    }
+    // Exit dialog
+    if (state.showExitDialog) {
+        ExitDialog(onIntent)
+    }
+    if (state.showWhatsNewDialog) {
+        WhatsNewDialog(
+            versionName = versionName,
+            items = state.changeLogs,
+            onDismiss = { onIntent(HomeIntent.OnWhatsNewDismissed) }
+        )
     }
 }
 
 @Composable
 fun MantraList(
     mantras: List<MantraDto>,
-    navController: NavController,
-    viewModel: HomeViewModel,
+    onIntent: (HomeIntent)-> Unit,
     paddingValues: PaddingValues
 ) {
-    LazyColumn(modifier = Modifier.padding(paddingValues).padding(bottom = 16.dp)) {
+    LazyColumn(
+        modifier = Modifier
+            .padding(paddingValues)
+            .padding(bottom = 16.dp)
+    ) {
         items(mantras, key = { it.id }) { mantra ->
             MantraListItem(
                 mantra,
                 onMantraClick = {
-                    navController.navigate(
-                        Screens.JaapDetailScreen.passJaapId(
-                            mantra.id
-                        )
-                    )
+                    onIntent(HomeIntent.OnMantraClicked(mantra.id))
                 },
                 onDeleteMantra = {
-                    viewModel.deleteJaap(mantra.toJaapEntity())
+                    onIntent(HomeIntent.DeleteMantra(mantra.toJaapEntity()))
+
                 },
                 onEditMantra = { newName ->
-                    viewModel.updateMantraName(mantra.id, newName)
+                    onIntent(HomeIntent.UpdateMantraName(mantra.id, newName))
                 },
                 modifier = Modifier.animateItem()
             )
@@ -139,7 +159,7 @@ fun Preview() {
         contentAlignment = Alignment.Center
     ) {
         Text(
-            "No mantras yet. \nClick + to add a new mantra",
+            stringResource(R.string.no_mantras_yet_click_to_add_a_new_mantra),
             color = MaterialTheme.colorScheme.onBackground
         )
     }
@@ -162,14 +182,14 @@ fun EmptyView(paddingValues: PaddingValues) {
             )
             Spacer(modifier = Modifier.height(16.dp))
             Text(
-                "No mantras yet",
+                stringResource(R.string.no_mantras_yet),
                 style = MaterialTheme.typography.titleMedium.copy(
                     fontWeight = FontWeight.Bold
                 ),
                 color = MaterialTheme.colorScheme.onBackground
             )
             Text(
-                "Tap the + button to add a new mantra",
+                stringResource(R.string.tap_the_button_to_add_a_new_mantra),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -178,20 +198,19 @@ fun EmptyView(paddingValues: PaddingValues) {
 }
 
 @Composable
-fun ExitDialog(viewModel: HomeViewModel, onExit: () -> Unit) {
+fun ExitDialog(onIntent: (HomeIntent)-> Unit) {
     AlertDialog(
-        onDismissRequest = { viewModel.dismissExitDialog() },
-        title = { Text("Exit App", fontWeight = FontWeight.Bold) },
-        text = { Text("Are you sure you want to exit Jaap Mala?") },
+        onDismissRequest = { onIntent(HomeIntent.DismissExitDialog) },
+        title = { Text(stringResource(R.string.exit_app), fontWeight = FontWeight.Bold) },
+        text = { Text(stringResource(R.string.are_you_sure_you_want_to_exit_jaap_mala)) },
         confirmButton = {
             TextButton(onClick = {
-                viewModel.confirmExit()
-                onExit()
-            }) { Text("Yes", color = MaterialTheme.colorScheme.error) }
+                onIntent(HomeIntent.ConfirmExit)
+            }) { Text(stringResource(R.string.yes), color = MaterialTheme.colorScheme.error) }
         },
         dismissButton = {
-            TextButton(onClick = { viewModel.dismissExitDialog() }) {
-                Text("No", color = MaterialTheme.colorScheme.primary)
+            TextButton(onClick = { onIntent(HomeIntent.DismissExitDialog) }) {
+                Text(stringResource(R.string.no), color = MaterialTheme.colorScheme.primary)
             }
         },
         shape = RoundedCornerShape(16.dp)

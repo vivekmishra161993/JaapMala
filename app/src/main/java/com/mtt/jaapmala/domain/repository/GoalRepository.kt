@@ -1,7 +1,7 @@
 package com.mtt.jaapmala.domain.repository
 
 import com.mtt.jaapmala.data.local.entity.GoalEntity
-import com.mtt.presentation.ui.screens.goals.GoalUiModel
+import com.mtt.presentation.ui.screens.lifetime_goals.GoalUiModel
 import kotlinx.coroutines.flow.Flow
 
 interface GoalRepository {
