@@ -1,7 +1,7 @@
 package com.mtt.jaapmala.domain.usecase
 
 import app.cash.turbine.test
-import com.mtt.jaapmala.data.local.entity.JaapHistoryEntity
+import com.mtt.jaapmala.domain.model.JaapHistory
 import com.mtt.jaapmala.domain.repository.JaapHistoryRepository
 import com.mtt.jaapmala.domain.usecase.jaap.GetJaapHistoryUseCase
 import io.mockk.every
@@ -28,8 +28,8 @@ class GetJaapHistoryUseCaseTest {
         // Arrange
         val jaapId = 1
         val historyList = listOf(
-            JaapHistoryEntity(jaapId = 1, date = "2025-09-10", count = 108, malaCount = 1),
-            JaapHistoryEntity(jaapId = 1, date = "2025-09-11", count = 216, malaCount = 2)
+            JaapHistory(jaapId = 1, date = "2025-09-10", count = 108, malaCount = 1),
+            JaapHistory(jaapId = 1, date = "2025-09-11", count = 216, malaCount = 2)
         )
 
         every { repository.getHistoryForJaap(jaapId) } returns flowOf(historyList)
