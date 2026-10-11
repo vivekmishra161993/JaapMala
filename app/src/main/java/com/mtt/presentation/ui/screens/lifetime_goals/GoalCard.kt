@@ -4,6 +4,7 @@ import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
@@ -44,6 +45,7 @@ import com.mtt.jaapmala.util.DateUtils
 import com.mtt.presentation.ui.screens.home.DeleteConfirmationDialog
 
 @Composable
+@OptIn(ExperimentalFoundationApi::class)
 fun GoalCard(
     goal: GoalUiModel,
     onDeleteGoal: () -> Unit,
