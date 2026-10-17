@@ -23,7 +23,7 @@ class JaapHistoryRepositoryImplTest {
 
     @Before
     fun setup() {
-        dao = mockk()
+        dao = mockk(relaxed = true)
         repository = JaapHistoryRepositoryImpl(dao)
     }
 

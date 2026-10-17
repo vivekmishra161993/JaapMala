@@ -14,6 +14,9 @@ interface JaapHistoryDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertOrUpdate(history: JaapHistoryEntity)
 
+    @Query("DELETE FROM jaap_history WHERE jaapId = :jaapId AND date = :date")
+    suspend fun deleteHistoryForDate(jaapId: Int, date: String)
+
     @Query("SELECT * FROM jaap_history WHERE jaapId = :jaapId ORDER BY date DESC")
     fun getHistoryForJaap(jaapId: Int): Flow<List<JaapHistory>>
 

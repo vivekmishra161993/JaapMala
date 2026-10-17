@@ -5,8 +5,11 @@ import com.mtt.jaapmala.data.local.entity.JaapHistoryEntity
 import com.mtt.jaapmala.data.mapper.toDomain
 import com.mtt.jaapmala.domain.model.JaapHistory
 import com.mtt.jaapmala.domain.repository.JaapHistoryRepository
+import com.mtt.jaapmala.util.DateUtils
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 
 class JaapHistoryRepositoryImpl(
     private val dao: JaapHistoryDao
@@ -18,10 +21,22 @@ class JaapHistoryRepositoryImpl(
         count: Int,
         malaCount: Int
     ) {
+        val isoDate = DateUtils.toIsoDate(date)
+        val legacyDate = try {
+            val parsed = LocalDate.parse(isoDate)
+            parsed.format(DateTimeFormatter.ofPattern("dd-MM-yyyy"))
+        } catch (_: Exception) {
+            null
+        }
+
+        if (legacyDate != null && legacyDate != isoDate) {
+            dao.deleteHistoryForDate(jaapId, legacyDate)
+        }
+
         dao.insertOrUpdate(
             JaapHistoryEntity(
                 jaapId = jaapId,
-                date = date,
+                date = isoDate,
                 count = count,
                 malaCount = malaCount
             )
@@ -36,8 +51,9 @@ class JaapHistoryRepositoryImpl(
         jaapId: Int,
         date: String
     ): Flow<JaapHistory?> {
-        return dao.getHistoryForDate(jaapId,date).map { it?.toDomain() }
+        return dao.getHistoryForDate(jaapId, DateUtils.toIsoDate(date)).map { it?.toDomain() }
     }
+
     override fun getHistoryBetweenDates(
         jaapId: Int,
         startDate: String,
@@ -46,8 +62,8 @@ class JaapHistoryRepositoryImpl(
         return dao
             .getHistoryBetweenDates(
                 jaapId = jaapId,
-                startDate = startDate,
-                endDate = endDate
+                startDate = DateUtils.toIsoDate(startDate),
+                endDate = DateUtils.toIsoDate(endDate)
             )
             .map { historyList ->
                 historyList.map { it.toDomain() }

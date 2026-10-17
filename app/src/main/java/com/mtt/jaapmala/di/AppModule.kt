@@ -24,12 +24,14 @@ import com.mtt.jaapmala.data.repository.DailyGoalRepoImpl
 import com.mtt.jaapmala.data.repository.GoalRepositoryImpl
 import com.mtt.jaapmala.data.repository.JaapHistoryRepositoryImpl
 import com.mtt.jaapmala.data.repository.JaapRepositoryImpl
+import com.mtt.jaapmala.data.repository.PracticeInsightAiRepositoryImpl
 import com.mtt.jaapmala.data.repository.SettingsRepositoryImpl
 import com.mtt.jaapmala.domain.repository.ChangelogRepository
 import com.mtt.jaapmala.domain.repository.DailyGoalRepository
 import com.mtt.jaapmala.domain.repository.GoalRepository
 import com.mtt.jaapmala.domain.repository.JaapHistoryRepository
 import com.mtt.jaapmala.domain.repository.JaapRepository
+import com.mtt.jaapmala.domain.repository.PracticeInsightAiRepository
 import com.mtt.jaapmala.domain.repository.SettingsRepository
 import com.mtt.jaapmala.domain.usecase.goals.AddGoalUseCase
 import com.mtt.jaapmala.domain.usecase.goals.DeleteGoalUseCase
@@ -320,5 +322,11 @@ object AppModule {
         @ApplicationContext context: Context
     ): JaapSoundManager {
         return JaapSoundManager(context)
+    }
+
+    @Provides
+    @Singleton
+    fun providePracticeInsightAiRepository(): PracticeInsightAiRepository {
+        return PracticeInsightAiRepositoryImpl()
     }
 }

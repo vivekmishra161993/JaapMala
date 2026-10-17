@@ -40,4 +40,33 @@ class SaveJaapHistoryUseCaseTest {
             )
         }
     }
+
+    @Test
+    fun `invoke with entity should call repository insertOrUpdateHistory with entity fields`() = runTest {
+        // Arrange
+        val entity = com.mtt.jaapmala.data.local.entity.JaapEntity(
+            id = 1,
+            name = "Gayatri Mantra",
+            date = "2025-09-12",
+            todayCount = 108,
+            todayMalaCount = 1,
+            malaSize = 108,
+            lifetimeCount = 108,
+            lifetimeMalaCount = 1,
+            count = 0
+        )
+
+        // Act
+        useCase(entity)
+
+        // Assert
+        coVerify(exactly = 1) {
+            repository.insertOrUpdateHistory(
+                jaapId = 1,
+                date = "2025-09-12",
+                count = 108,
+                malaCount = 1
+            )
+        }
+    }
 }

@@ -3,6 +3,7 @@ package com.mtt.presentation.ui.screens.jaap
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.mtt.jaapmala.R
+import com.mtt.jaapmala.data.local.entity.JaapEntity
 import com.mtt.jaapmala.domain.usecase.goals.UpdateGoalProgressUseCase
 import com.mtt.jaapmala.domain.usecase.haptics.GetHapticFeedbackUseCase
 import com.mtt.jaapmala.domain.usecase.haptics.GetHapticFrequencyUseCase
@@ -29,7 +30,6 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import java.time.LocalDate
 import javax.inject.Inject
 
 @HiltViewModel
@@ -191,6 +191,7 @@ class JaapDetailViewModel @Inject constructor(
             }
             handleSound(isMalaCompleted = isMalaCompleted)
             updateJaapUseCase(updated)
+            saveHistory(updated)
         }
     }
 
@@ -215,6 +216,7 @@ class JaapDetailViewModel @Inject constructor(
                 copy(mantra = updated)
             }
             updateJaapUseCase(updated)
+            saveHistory(updated)
 
         }
     }
@@ -238,7 +240,10 @@ class JaapDetailViewModel @Inject constructor(
     private fun updateJaapCountManually(jaapId: Int, addedCount: Int) {
         viewModelScope.launch {
             try {
-                updateJaapManuallyUseCase.invoke(jaapId, addedCount)
+                val updatedJaap = updateJaapManuallyUseCase.invoke(jaapId, addedCount)
+                if (updatedJaap != null) {
+                    saveHistory(updatedJaap)
+                }
                 val mantra = state.value.mantra ?: return@launch
                 val malaIncrement = if (mantra.malaSize > 0) {
                     addedCount / mantra.malaSize
@@ -288,18 +293,15 @@ class JaapDetailViewModel @Inject constructor(
         }
     }
 
-    fun saveHistoryForToday() {
+    private fun saveHistory(mantra: JaapEntity) {
         viewModelScope.launch {
-            val mantra = state.value.mantra ?: return@launch
-            val today = LocalDate.now().toString()
-
-            saveJaapHistoryUseCase(
-                jaapId = mantra.id,
-                date = today,
-                count = mantra.todayCount,
-                malaCount = mantra.todayMalaCount
-            )
+            saveJaapHistoryUseCase(mantra)
         }
+    }
+
+    fun saveHistoryForToday() {
+        val mantra = state.value.mantra ?: return
+        saveHistory(mantra)
     }
 
     private fun shareProgress() {
@@ -356,6 +358,7 @@ class JaapDetailViewModel @Inject constructor(
         viewModelScope.launch {
             jaapSoundManager.stopMeditation()
         }
+        saveHistoryForToday()
     }
 
     private fun onAppForegrounded() {

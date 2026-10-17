@@ -10,17 +10,18 @@ import java.util.Locale
 object DateUtils {
     fun formatDate(inputDate: String): String {
         return try {
+            val isoDate = toIsoDate(inputDate)
             val inputFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
             val outputFormatter = DateTimeFormatter.ofPattern("dd-MM-yyyy")
-            val parsedDate = LocalDate.parse(inputDate, inputFormatter)
+            val parsedDate = LocalDate.parse(isoDate, inputFormatter)
             parsedDate.format(outputFormatter)
         } catch (e: DateTimeParseException) {
             inputDate
-        }
-        catch (e: Exception) {
+        } catch (e: Exception) {
             "Invalid Date"
         }
     }
+
     fun formatTimeTo12Hour(time24: String): String {
         return try {
             val parser = SimpleDateFormat("HH:mm", Locale.getDefault())
@@ -31,29 +32,41 @@ object DateUtils {
             time24 // fallback if parsing fails
         }
     }
+
     fun formatMillisToDate(millis: Long?): String {
         if (millis == null) return ""
         return try {
             val formatter = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
             formatter.format(Date(millis))
         } catch (e: Exception) {
-            // In case of an unexpected error, return an empty string
-            // to avoid crashing the UI.
             ""
         }
     }
-     fun getTodayDate(): String {
-        val today = LocalDate.now()
-        val formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy")
-        return today.format(formatter)
+
+    fun getTodayDate(): String {
+        return LocalDate.now().toString()
     }
+
+    fun toIsoDate(dateStr: String): String {
+        if (dateStr.isBlank()) return dateStr
+        return try {
+            if (dateStr.matches(Regex("\\d{2}-\\d{2}-\\d{4}"))) {
+                val parsed = LocalDate.parse(dateStr, DateTimeFormatter.ofPattern("dd-MM-yyyy"))
+                parsed.toString()
+            } else {
+                dateStr
+            }
+        } catch (e: Exception) {
+            dateStr
+        }
+    }
+
     fun generateDateRange(
         startDate: String,
         endDate: String
     ): List<String> {
-
-        val start = LocalDate.parse(startDate)
-        val end = LocalDate.parse(endDate)
+        val start = LocalDate.parse(toIsoDate(startDate))
+        val end = LocalDate.parse(toIsoDate(endDate))
 
         if (start.isAfter(end)) {
             return emptyList()
@@ -68,5 +81,4 @@ object DateUtils {
         }.map(LocalDate::toString)
             .toList()
     }
-
 }
