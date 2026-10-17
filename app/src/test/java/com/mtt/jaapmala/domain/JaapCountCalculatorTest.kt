@@ -74,7 +74,7 @@ class JaapCountCalculatorTest {
         assertThat(updated.todayCount).isEqualTo(120) // 50 + 70
         assertThat(updated.todayMalaCount).isEqualTo(1) // 120 ÷ 108 = 1
         assertThat(updated.lifetimeCount).isEqualTo(270) // 200 + 70
-        assertThat(updated.lifetimeMalaCount).isEqualTo(1 + (70 / 108)) // still 1
+        assertThat(updated.lifetimeMalaCount).isEqualTo(2) // 1 previous + 1 completed in this update
         assertThat(updated.count).isEqualTo(12) // 120 % 108
     }
 }

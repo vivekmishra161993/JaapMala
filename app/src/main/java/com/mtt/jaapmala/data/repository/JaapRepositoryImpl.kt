@@ -2,10 +2,10 @@ package com.mtt.jaapmala.data.repository
 
 import com.mtt.jaapmala.data.local.dao.JaapDao
 import com.mtt.jaapmala.data.local.entity.JaapEntity
+import com.mtt.jaapmala.data.mapper.toMantraDto
 import com.mtt.jaapmala.data.model.MantraDto
 import com.mtt.jaapmala.domain.repository.JaapRepository
 import com.mtt.jaapmala.util.DateUtils
-import com.mtt.jaapmala.data.mapper.toMantraDto
 import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 
@@ -14,10 +14,10 @@ class JaapRepositoryImpl @Inject constructor(private val dao: JaapDao) : JaapRep
         return dao.getAllMantras()
     }
 
-    override suspend fun insertMantra(name: String, date: String,size:Int): MantraDto {
+    override suspend fun insertMantra(name: String, date: String, size: Int): MantraDto {
         val entity = JaapEntity(
             name = name,
-            date = date,
+            date = DateUtils.toIsoDate(date),
             todayCount = 0,
             todayMalaCount = 0,
             lifetimeCount = 0,
@@ -47,8 +47,9 @@ class JaapRepositoryImpl @Inject constructor(private val dao: JaapDao) : JaapRep
 
     override suspend fun ensureToday(entity: JaapEntity): JaapEntity {
         val today = DateUtils.getTodayDate()
+        val entityIsoDate = DateUtils.toIsoDate(entity.date)
 
-        return if (entity.date != today) {
+        return if (entityIsoDate != today) {
             val updated = entity.copy(
                 todayCount = 0,
                 todayMalaCount = 0,
@@ -58,16 +59,23 @@ class JaapRepositoryImpl @Inject constructor(private val dao: JaapDao) : JaapRep
             )
             dao.updateJaap(updated)
             updated
+        } else if (entity.date != today) {
+            val updated = entity.copy(date = today)
+            dao.updateJaap(updated)
+            updated
         } else {
             entity
         }
     }
+
     override suspend fun deleteJaap(jaap: JaapEntity) {
         dao.deleteJaap(jaap)
     }
+
     override suspend fun updateJaapName(jaapId: Int, newName: String) {
         dao.updateJaapName(jaapId, newName)
     }
+
     override suspend fun getById(jaapId: Int): JaapEntity? {
         return dao.getById(jaapId)
     }
